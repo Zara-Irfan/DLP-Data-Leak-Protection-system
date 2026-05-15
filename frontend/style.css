@@ -695,6 +695,12 @@ html, body {
   border: 1px solid rgba(248,81,73,0.3);
 }
 
+.type-CLIPBOARD {
+  background: rgba(227,179,65,0.12);
+  color: var(--yellow);
+  border: 1px solid rgba(227,179,65,0.3);
+}
+
 /* ── CLASSIFICATION TAGS ── */
 
 .tag {

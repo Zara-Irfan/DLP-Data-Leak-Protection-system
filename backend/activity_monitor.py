@@ -551,6 +551,24 @@ class ActivityMonitor:
 
         lower_site = site.lower()
 
+        # ── Email compose detection (alert before content is sent) ────────────
+        _compose_signals = {"compose", "new message", "new email", "reply to",
+                            "fwd:", "re: ", "write new", "draft"}
+        _email_sites     = {"gmail", "yahoo mail", "outlook", "hotmail",
+                            "protonmail", "mail.google"}
+
+        is_email_site    = any(s in lower_site for s in _email_sites)
+        is_compose_title = any(sig in content.lower() for sig in _compose_signals)
+
+        if is_email_site and (is_compose_title or content.lower() in {"compose", "new message"}):
+            self._emit(
+                "ALERT", browser,
+                f"EMAIL_COMPOSE — Email compose window opened on {site} [{browser}] — "
+                f"clipboard monitor is active and will flag any sensitive data "
+                f"(passwords, DOB, personal info) pasted into this email"
+            )
+            return
+
         # Personalise the verb based on the site
         if "google" in lower_site and "search" in lower_site:
             action_verb = f"Searched for '{content}' on Google"

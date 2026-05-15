@@ -26,6 +26,7 @@ from dlp_engine import DB, DLPEngine, CONFIG, CONFIG_FILE
 from windows_log_monitor import WindowsLogMonitor
 from activity_monitor import ActivityMonitor
 from firewall_monitor import FirewallMonitor
+from clipboard_monitor import ClipboardMonitor
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
 app.config["SECRET_KEY"] = os.urandom(24)
@@ -136,15 +137,17 @@ if __name__ == "__main__":
         # push updated stats after every event
         socketio.emit("stats_update", _db.stats())
 
-    _engine   = DLPEngine(db=_db, event_callback=_on_event)
-    _winlog   = WindowsLogMonitor(db=_db, event_callback=_on_event)
-    _activity = ActivityMonitor(db=_db, event_callback=_on_event)
-    _firewall = FirewallMonitor(db=_db, event_callback=_on_event)
+    _engine    = DLPEngine(db=_db, event_callback=_on_event)
+    _winlog    = WindowsLogMonitor(db=_db, event_callback=_on_event)
+    _activity  = ActivityMonitor(db=_db, event_callback=_on_event)
+    _firewall  = FirewallMonitor(db=_db, event_callback=_on_event)
+    _clipboard = ClipboardMonitor(db=_db, event_callback=_on_event)
 
     threading.Thread(target=_engine.start,    daemon=True).start()
     threading.Thread(target=_winlog.start,    daemon=True).start()
     threading.Thread(target=_activity.start,  daemon=True).start()
     threading.Thread(target=_firewall.start,  daemon=True).start()
+    threading.Thread(target=_clipboard.start, daemon=True).start()
     threading.Thread(target=_broadcaster,     daemon=True).start()
     threading.Thread(target=_open_browser,    daemon=True).start()
 
@@ -153,6 +156,7 @@ if __name__ == "__main__":
     print(f"  Win Logs  : Security, System, PowerShell, Defender")
     print(f"  Activity  : Browser history, Processes, Network")
     print(f"  Firewall  : Packet log, port scans, C2 detection, rule changes")
+    print(f"  Email     : Clipboard scan, compose window detection")
     print(f"  Database  : {CONFIG['db']}")
     print("  Press Ctrl+C to stop\n")
 
@@ -164,3 +168,4 @@ if __name__ == "__main__":
         _winlog.stop()
         _activity.stop()
         _firewall.stop()
+        _clipboard.stop()
