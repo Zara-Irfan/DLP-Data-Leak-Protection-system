@@ -62,16 +62,18 @@ def index():
 
 @app.route("/api/logs")
 def api_logs():
-    limit = min(int(request.args.get("limit", 500)), 2000)
-    action = request.args.get("action", None)
-    rows = _db.recent(limit=limit, action=action)
+    limit    = min(int(request.args.get("limit", 500)), 2000)
+    action   = request.args.get("action", None)
+    since_id = int(request.args.get("since_id", 0))
+    rows = _db.recent(limit=limit, action=action, since_id=since_id)
     return jsonify([
         {
-            "time": r[0],
-            "type": r[1],
-            "action": r[2],
-            "source": r[3],
-            "details": r[4] or "",
+            "id":      r[0],
+            "time":    r[1],
+            "type":    r[2],
+            "action":  r[3],
+            "source":  r[4],
+            "details": r[5] or "",
         }
         for r in rows
     ])

@@ -67,25 +67,26 @@ class DB:
 
     def log(self, t, a, s, d):
         with self._lock:
-            self.conn.execute(
+            cur = self.conn.execute(
                 "INSERT INTO logs VALUES (NULL,?,?,?,?,?)",
                 (datetime.now().isoformat(), t, a, s, d)
             )
             self.conn.commit()
+            return cur.lastrowid
 
-    def recent(self, limit=200, action=None):
+    def recent(self, limit=200, action=None, since_id=0):
         with self._lock:
             if action and action != "ALL":
                 cur = self.conn.execute(
-                    "SELECT time, type, action, source, details FROM logs "
-                    "WHERE action=? ORDER BY id DESC LIMIT ?",
-                    (action, limit)
+                    "SELECT id, time, type, action, source, details FROM logs "
+                    "WHERE action=? AND id > ? ORDER BY id DESC LIMIT ?",
+                    (action, since_id, limit)
                 )
             else:
                 cur = self.conn.execute(
-                    "SELECT time, type, action, source, details FROM logs "
-                    "ORDER BY id DESC LIMIT ?",
-                    (limit,)
+                    "SELECT id, time, type, action, source, details FROM logs "
+                    "WHERE id > ? ORDER BY id DESC LIMIT ?",
+                    (since_id, limit)
                 )
             return cur.fetchall()
 

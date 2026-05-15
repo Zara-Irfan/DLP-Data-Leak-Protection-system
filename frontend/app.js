@@ -16,7 +16,9 @@ let logEvents       = [];   // event log page data
 let activeFilter    = 'ALL';
 let searchQuery     = '';
 let socket          = null;
-let _autoRefresh    = null; // interval handle for Event Log auto-refresh
+let _autoRefresh    = null;   // 1-second poll interval handle
+let _lastKnownId    = 0;      // highest event id seen — used for delta polling
+const _shownIds     = new Set(); // dedup guard for event log rows
 
 const stats = { BLOCK: 0, QUARANTINE: 0, ENCRYPT: 0, ALERT: 0, ALLOW: 0, TOTAL: 0 };
 let timelineHistory = [];
@@ -201,6 +203,11 @@ function prependLiveEvent(ev) {
 
 // ── Event Log page ───────────────────────────────────────────
 
+function _trackId(ev) {
+  if (ev.id && ev.id > _lastKnownId) _lastKnownId = ev.id;
+  if (ev.id) _shownIds.add(ev.id);
+}
+
 function loadEventLog() {
   const action = $('log-action-select').value;
   const limit  = $('log-limit-select').value;
@@ -210,13 +217,56 @@ function loadEventLog() {
     .then(r => r.json())
     .then(rows => {
       logEvents = rows;
+      _shownIds.clear();
+      rows.forEach(_trackId);
       renderLogTable();
       $('log-last-refresh').textContent =
-        'Refreshed at ' + new Date().toLocaleTimeString('en-US', { hour12: false });
+        'Live · ' + new Date().toLocaleTimeString('en-US', { hour12: false });
     })
     .catch(() => {
       $('log-count').textContent = 'Error loading events';
     });
+}
+
+// 1-second delta poll: fetches ONLY events newer than _lastKnownId
+function _pollNewEvents() {
+  const logPage = $('page-events');
+  if (!logPage || !logPage.classList.contains('active')) return;
+  if (_lastKnownId === 0) return; // wait for first full load
+
+  const action      = $('log-action-select').value;
+  const actionParam = (action && action !== 'ALL') ? `&action=${encodeURIComponent(action)}` : '';
+
+  fetch(`/api/logs?since_id=${_lastKnownId}&limit=100${actionParam}`)
+    .then(r => r.json())
+    .then(rows => {
+      if (!rows.length) return;
+
+      const tbody    = $('log-body');
+      const emptyRow = $('log-empty-row');
+      if (emptyRow.parentNode === tbody) tbody.removeChild(emptyRow);
+
+      let added = 0;
+      rows.forEach(ev => {
+        if (_shownIds.has(ev.id)) return; // already in table
+        _trackId(ev);
+        logEvents.unshift(ev);
+        const tr = buildRow(ev, true);
+        tbody.insertBefore(tr, tbody.firstChild);
+        added++;
+      });
+
+      if (!added) return;
+
+      const limitVal = parseInt($('log-limit-select').value, 10) || 500;
+      while (tbody.children.length > limitVal) tbody.removeChild(tbody.lastChild);
+
+      const shown = tbody.children.length;
+      $('log-count').textContent = `${shown} event${shown !== 1 ? 's' : ''}`;
+      $('log-last-refresh').textContent =
+        'Live · ' + new Date().toLocaleTimeString('en-US', { hour12: false });
+    })
+    .catch(() => {});
 }
 
 function renderLogTable() {
@@ -260,6 +310,9 @@ function exportCSV() {
 }
 
 function prependLogEvent(ev) {
+  // If this event already has an id and was added by the 1-second poll, skip it
+  if (ev.id && _shownIds.has(ev.id)) return;
+  _trackId(ev);
   logEvents.unshift(ev);
 
   const logPage = $('page-events');
@@ -341,12 +394,7 @@ function bindDashboardControls() {
 
 function startEventLogAutoRefresh() {
   clearInterval(_autoRefresh);
-  _autoRefresh = setInterval(() => {
-    const logPage = $('page-events');
-    if (logPage && logPage.classList.contains('active')) {
-      loadEventLog();
-    }
-  }, 15000); // reload every 15 seconds automatically
+  _autoRefresh = setInterval(_pollNewEvents, 1000); // true 1-second real-time
 }
 
 function stopEventLogAutoRefresh() {
