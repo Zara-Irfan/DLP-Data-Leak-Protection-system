@@ -194,6 +194,8 @@ class Handler(FileSystemEventHandler):
         self.event_cb = event_cb
         self._seen = {}
         self._lock = threading.Lock()
+        # Track .enc paths that DLP itself just created so we don't alert on them
+        self._dlp_enc: dict = {}   # enc_path -> monotonic time
 
     def _debounce(self, path):
         now = time.monotonic()
@@ -250,6 +252,8 @@ class Handler(FileSystemEventHandler):
             elif action == "BLOCK":
                 os.remove(path)
             elif action == "ENCRYPT":
+                enc_path = path + ".enc"
+                self._dlp_enc[enc_path] = time.monotonic()  # pre-register before file is created
                 self.enc.encrypt(path)
         except (FileNotFoundError, PermissionError):
             pass
@@ -264,13 +268,52 @@ class Handler(FileSystemEventHandler):
         event["id"] = self.db.log("ENDPOINT", action, path, event["details"])
         self.event_cb(event)
 
+    def _check_enc_tamper(self, path: str):
+        """Alert and delete an encrypted file that was modified outside of DLP."""
+        # 5-second grace window — skip if DLP itself just created this file
+        if time.monotonic() - self._dlp_enc.get(path, 0) < 5.0:
+            return
+        if not self._debounce(path):
+            return
+        fname = os.path.basename(path)
+        try:
+            os.remove(path)
+            desc = (
+                f"ENC_TAMPER — Encrypted file externally modified and deleted: {fname} — "
+                f"This DLP-protected file was changed outside the system. "
+                f"The tampered file has been removed to prevent data corruption."
+            )
+        except (FileNotFoundError, PermissionError):
+            desc = (
+                f"ENC_TAMPER — Encrypted file externally modified: {fname} — "
+                f"This DLP-protected file was changed outside the system."
+            )
+        ev = {
+            "time":    datetime.now().isoformat(),
+            "type":    "ENDPOINT",
+            "action":  "BLOCK",
+            "source":  fname,
+            "details": desc,
+        }
+        ev["id"] = self.db.log("ENDPOINT", "BLOCK", path, ev["details"])
+        self.event_cb(ev)
+
     def on_created(self, event):
-        if not event.is_directory:
-            self.process(event.src_path, "Created")
+        if event.is_directory:
+            return
+        path = event.src_path
+        if path.endswith(".enc"):
+            return  # DLP creates these — not a security event
+        self.process(path, "Created")
 
     def on_modified(self, event):
-        if not event.is_directory:
-            self.process(event.src_path, "Modified")
+        if event.is_directory:
+            return
+        path = event.src_path
+        if path.endswith(".enc"):
+            self._check_enc_tamper(path)  # external modification of protected file
+            return
+        self.process(path, "Modified")
 
     def on_deleted(self, event):
         if event.is_directory:

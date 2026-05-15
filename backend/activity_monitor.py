@@ -84,6 +84,31 @@ _EXFIL_URL_PATTERNS = [
      "Large data payload in URL query string"),
 ]
 
+# ── Processes suppressed from routine ALLOW/PROCESS_START events ─────────────
+# Suspicious-dir and bad-cmdline checks still run for ALL of these.
+# Browsers are tracked via history + window titles, not process events.
+# System processes cycle too frequently to be useful as ALLOW audit entries.
+# DLP-spawned utilities (wevtutil, powershell, netsh) appear every 1-2 seconds.
+_NOISE_PROCS = frozenset({
+    # Browsers
+    "chrome.exe", "msedge.exe", "firefox.exe", "brave.exe",
+    "opera.exe", "chromium.exe", "iexplore.exe",
+    # Windows system processes
+    "runtimebroker.exe", "svchost.exe", "conhost.exe", "dllhost.exe",
+    "taskhostw.exe", "sihost.exe", "fontdrvhost.exe", "ctfmon.exe",
+    "audiodg.exe", "settingsynchost.exe", "backgroundtaskhost.exe",
+    "wuauclt.exe", "msiexec.exe", "searchindexer.exe",
+    "searchprotocolhost.exe", "searchfilterhost.exe",
+    "securityhealthservice.exe", "smartscreen.exe",
+    "werfault.exe", "wermgr.exe", "sppsvc.exe",
+    # DLP-spawned subprocesses (would flood the log if logged)
+    "wevtutil.exe",     # windows_log_monitor runs this every 2 s
+    "whoami.exe",       # admin detection on startup
+    "netsh.exe",        # firewall_monitor enables logging via netsh
+    "powershell.exe",   # activity_monitor runs this every 1 s for window titles
+    "pwsh.exe",         # same, PowerShell 7 variant
+})
+
 # ── Suspicious process detection ─────────────────────────────
 _BAD_PROCESS_NAMES = {
     "mimikatz.exe", "meterpreter.exe", "nc.exe", "ncat.exe",
@@ -711,15 +736,10 @@ class ActivityMonitor:
                     )
                     return
 
-        # ── Skip browser subprocess noise ────────────────────
-        # Browsers spawn 10+ subprocesses (GPU, renderer, network service, crash
-        # handler, etc.).  Each new PID would fire a false "Chrome was opened" event.
-        # Browsing activity is tracked more accurately via history and window titles.
-        _BROWSER_EXES = frozenset({
-            "chrome.exe", "msedge.exe", "firefox.exe", "brave.exe",
-            "opera.exe", "chromium.exe", "iexplore.exe",
-        })
-        if name in _BROWSER_EXES:
+        # ── Skip noisy system / DLP-spawned processes ────────
+        # Malicious-tool and suspicious-dir/cmdline checks above still ran.
+        # Only the generic ALLOW audit entry is suppressed here.
+        if name in _NOISE_PROCS:
             return
 
         # ── Normal app launch — audit trail ──────────────────
