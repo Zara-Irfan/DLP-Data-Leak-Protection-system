@@ -200,7 +200,7 @@ class ClipboardMonitor:
 
         if compose:
             self._emit(
-                "ALERT", "Email/Clipboard",
+                "BLOCK", "Email/Clipboard",
                 f"EMAIL_DATA_LEAK — {labels} detected in clipboard while email compose "
                 f"window is open ('{compose[:70]}') — "
                 f"sensitive data is about to be sent via email. "

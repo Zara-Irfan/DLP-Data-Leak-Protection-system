@@ -701,6 +701,122 @@ html, body {
   border: 1px solid rgba(227,179,65,0.3);
 }
 
+/* ── EVENT DETAIL MODAL ── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.modal-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: min(680px, 92vw);
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  animation: modal-in 0.15s ease;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--txt);
+  letter-spacing: 0.01em;
+}
+
+.modal-close {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--txt-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 7px;
+  line-height: 1.4;
+  transition: color 0.15s, border-color 0.15s;
+}
+.modal-close:hover {
+  color: var(--txt);
+  border-color: var(--border);
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modal-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 24px;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.modal-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--txt-muted);
+}
+
+.modal-value {
+  color: var(--txt);
+  font-size: 13px;
+}
+
+.modal-details-text {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  color: var(--txt);
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+.clickable-row:hover td {
+  background: var(--card-hover) !important;
+}
+
 /* ── CLASSIFICATION TAGS ── */
 
 .tag {

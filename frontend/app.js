@@ -66,6 +66,8 @@ function buildTagsHTML(ev) {
 function buildRow(ev, isNew) {
   const tr = document.createElement('tr');
   if (isNew) tr.classList.add('new-row');
+  tr.classList.add('clickable-row');
+  tr._dlpEvent = ev;
   const typeStr = ev.type || 'ENDPOINT';
   tr.innerHTML = `
     <td class="time-cell">${escHtml(fmtDateTime(ev.time))}</td>
@@ -74,6 +76,7 @@ function buildRow(ev, isNew) {
     <td class="source-cell" title="${escHtml(ev.source)}">${escHtml(ev.source || '—')}</td>
     <td class="details-cell" title="${escHtml(ev.details)}">${buildTagsHTML(ev)}</td>
   `;
+  tr.addEventListener('click', () => openEventModal(ev));
   return tr;
 }
 
@@ -490,6 +493,41 @@ function bindConfigControls() {
   $('cfg-ip-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('cfg-ip-add').click(); });
 }
 
+// ── Event detail modal ───────────────────────────────────────
+
+function openEventModal(ev) {
+  $('modal-time').textContent   = fmtDateTime(ev.time);
+  $('modal-source').textContent = ev.source || '—';
+
+  $('modal-type').innerHTML =
+    `<span class="type-chip type-${escHtml(ev.type || 'ENDPOINT')}">${escHtml(ev.type || 'ENDPOINT')}</span>`;
+  $('modal-action').innerHTML =
+    `<span class="badge badge-${escHtml(ev.action)}">${escHtml(ev.action)}</span>`;
+
+  // Format the details string so each " — " and " | " starts on a new line
+  const raw = ev.details || '—';
+  $('modal-details').textContent = raw
+    .replace(/\s*[—–]\s*/g, '\n\n')
+    .replace(/\s*\|\s*/g, '\n\n')
+    .trim();
+
+  $('event-modal').style.display = 'flex';
+}
+
+function closeEventModal() {
+  $('event-modal').style.display = 'none';
+}
+
+function bindModal() {
+  $('modal-close').addEventListener('click', closeEventModal);
+  $('event-modal').addEventListener('click', e => {
+    if (e.target === $('event-modal')) closeEventModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeEventModal();
+  });
+}
+
 // ── Socket.IO ───────────────────────────────────────────────
 
 function connectSocket() {
@@ -533,6 +571,7 @@ function init() {
   bindDashboardControls();
   bindEventLogControls();
   bindConfigControls();
+  bindModal();
 
   // Load dashboard history
   fetch('/api/logs?limit=500')

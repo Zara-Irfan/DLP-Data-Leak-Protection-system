@@ -374,6 +374,40 @@
     </main>
   </div>
 
+  <!-- ── EVENT DETAIL MODAL ── -->
+  <div id="event-modal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">Event Details</span>
+        <button id="modal-close" class="modal-close" title="Close">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-meta-grid">
+          <div class="modal-field">
+            <span class="modal-label">Timestamp</span>
+            <span class="modal-value" id="modal-time"></span>
+          </div>
+          <div class="modal-field">
+            <span class="modal-label">Channel</span>
+            <span class="modal-value" id="modal-type"></span>
+          </div>
+          <div class="modal-field">
+            <span class="modal-label">Action</span>
+            <span class="modal-value" id="modal-action"></span>
+          </div>
+          <div class="modal-field">
+            <span class="modal-label">Source</span>
+            <span class="modal-value" id="modal-source"></span>
+          </div>
+        </div>
+        <div class="modal-field">
+          <span class="modal-label">Full Details</span>
+          <div id="modal-details" class="modal-details-text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="app.js"></script>
 </body>
