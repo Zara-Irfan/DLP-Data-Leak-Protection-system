@@ -1,0 +1,21 @@
+{
+  "watch_paths": [
+    "./monitor"
+  ],
+  "quarantine_path": "./quarantine",
+  "db": "dlp.db",
+  "trusted_ips": [
+    "8.8.8.8",
+    "1.1.1.1"
+  ],
+  "keywords": [
+    "confidential",
+    "secret",
+    "password",
+    "api_key",
+    "ssn",
+    "social security",
+    "credit card",
+    "private key"
+  ]
+}

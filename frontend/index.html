@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enterprise DLP — Security Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="layout">
+
+    <!-- ── SIDEBAR ── -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <div class="brand-text">
+          <span class="brand-name">DLP Enterprise</span>
+          <span class="brand-sub">Data Loss Prevention</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="#" class="nav-item" data-section="events">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Event Log
+        </a>
+        <a href="#" class="nav-item" data-section="config">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+          Configuration
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="conn-indicator" id="conn-indicator">
+          <span class="conn-dot" id="conn-dot"></span>
+          <span id="conn-label">Connecting...</span>
+        </div>
+        <div class="sidebar-version">v1.0.0</div>
+      </div>
+    </aside>
+
+    <!-- ── MAIN ── -->
+    <main class="main">
+
+      <!-- PAGE: DASHBOARD -->
+      <section class="page active" id="page-dashboard">
+
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Security Dashboard</h1>
+            <p class="page-subtitle">Real-time data loss prevention monitoring</p>
+          </div>
+          <div class="header-right">
+            <div class="live-badge" id="live-badge">
+              <span class="live-dot"></span>
+              LIVE
+            </div>
+            <div class="total-counter">
+              <span id="total-count">0</span>
+              <span class="total-label">total events</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STAT CARDS -->
+        <div class="stats-grid">
+          <div class="stat-card stat-block">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="cnt-block">0</div>
+              <div class="stat-label">Blocked</div>
+            </div>
+            <div class="stat-trend" id="trend-block"></div>
+          </div>
+
+          <div class="stat-card stat-quarantine">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="cnt-quarantine">0</div>
+              <div class="stat-label">Quarantined</div>
+            </div>
+            <div class="stat-trend" id="trend-quarantine"></div>
+          </div>
+
+          <div class="stat-card stat-encrypt">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M12 3a5 5 0 0 1 5 5v3H7V8a5 5 0 0 1 5-5z"/></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="cnt-encrypt">0</div>
+              <div class="stat-label">Encrypted</div>
+            </div>
+            <div class="stat-trend" id="trend-encrypt"></div>
+          </div>
+
+          <div class="stat-card stat-alert">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="cnt-alert">0</div>
+              <div class="stat-label">Alerts</div>
+            </div>
+            <div class="stat-trend" id="trend-alert"></div>
+          </div>
+
+          <div class="stat-card stat-allow">
+            <div class="stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="stat-body">
+              <div class="stat-value" id="cnt-allow">0</div>
+              <div class="stat-label">Allowed</div>
+            </div>
+            <div class="stat-trend" id="trend-allow"></div>
+          </div>
+        </div>
+
+        <!-- ACTIVITY TIMELINE -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Activity Timeline</h2>
+            <span class="card-badge" id="timeline-window">last 60 events</span>
+          </div>
+          <div class="timeline-chart" id="timeline-chart"></div>
+        </div>
+
+        <!-- LIVE EVENTS TABLE -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Live Event Feed</h2>
+            <div class="card-controls">
+              <div class="filter-group" id="filter-group">
+                <button class="filter-btn active" data-filter="ALL">All</button>
+                <button class="filter-btn" data-filter="BLOCK">Block</button>
+                <button class="filter-btn" data-filter="QUARANTINE">Quarantine</button>
+                <button class="filter-btn" data-filter="ENCRYPT">Encrypt</button>
+                <button class="filter-btn" data-filter="ALERT">Alert</button>
+                <button class="filter-btn" data-filter="ALLOW">Allow</button>
+              </div>
+              <div class="search-wrap">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="search-input" class="search-input" placeholder="Search source or classification...">
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="events-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Channel</th>
+                  <th>Action</th>
+                  <th>Source</th>
+                  <th>Classification</th>
+                </tr>
+              </thead>
+              <tbody id="events-body">
+                <tr class="empty-row" id="empty-row">
+                  <td colspan="5">
+                    <div class="empty-state">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                      <p>No events yet. Drop a file into the <code>monitor/</code> folder to test.</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <span id="row-count">0 events shown</span>
+            <span id="filter-label">Filter: ALL</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- PAGE: EVENTS -->
+      <section class="page" id="page-events">
+
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Event Log</h1>
+            <p class="page-subtitle">Full historical event database</p>
+          </div>
+          <div class="header-right">
+            <select id="log-action-select" class="select-input">
+              <option value="ALL">All Actions</option>
+              <option value="BLOCK">Block</option>
+              <option value="QUARANTINE">Quarantine</option>
+              <option value="ENCRYPT">Encrypt</option>
+              <option value="ALERT">Alert</option>
+              <option value="ALLOW">Allow</option>
+            </select>
+            <select id="log-limit-select" class="select-input">
+              <option value="100">Last 100</option>
+              <option value="500" selected>Last 500</option>
+              <option value="1000">Last 1,000</option>
+              <option value="2000">Last 2,000</option>
+            </select>
+            <button id="log-refresh-btn" class="btn-action">Refresh</button>
+            <button id="log-export-btn" class="btn-action btn-outline">Export CSV</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table class="events-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Channel</th>
+                  <th>Action</th>
+                  <th>Source</th>
+                  <th>Classification</th>
+                </tr>
+              </thead>
+              <tbody id="log-body">
+                <tr id="log-empty-row">
+                  <td colspan="5">
+                    <div class="empty-state">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                      <p>No events in the database yet. Drop a file into <code>monitor/</code> to generate events.</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <span id="log-count">—</span>
+            <span id="log-last-refresh">Not loaded yet</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- PAGE: CONFIG -->
+      <section class="page" id="page-config">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Configuration</h1>
+            <p class="page-subtitle">Edit and save your DLP system settings</p>
+          </div>
+          <div class="header-right">
+            <span id="cfg-status"></span>
+            <button id="cfg-save-btn" class="btn-action">Save Changes</button>
+          </div>
+        </div>
+
+        <div class="cfg-layout">
+
+          <!-- LEFT: editable settings -->
+          <div class="cfg-main">
+
+            <div class="card cfg-block">
+              <div class="cfg-block-hd">
+                <div class="cfg-icon cfg-icon-blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div>
+                  <div class="cfg-block-title">Monitored Folders</div>
+                  <div class="cfg-block-sub">Files created or modified in these folders are scanned instantly. Changes take effect on next restart.</div>
+                </div>
+              </div>
+              <div class="cfg-editlist" id="cfg-paths-list"></div>
+              <div class="cfg-addrow">
+                <input class="cfg-textinput" id="cfg-path-input" placeholder="e.g. ./monitor or C:\Users\you\Documents">
+                <button class="cfg-addbtn" id="cfg-path-add">Add Folder</button>
+              </div>
+            </div>
+
+            <div class="card cfg-block">
+              <div class="cfg-block-hd">
+                <div class="cfg-icon cfg-icon-yellow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <div>
+                  <div class="cfg-block-title">Sensitive Keywords</div>
+                  <div class="cfg-block-sub">Files containing any of these words will be encrypted. Changes apply immediately.</div>
+                </div>
+              </div>
+              <div class="cfg-chips" id="cfg-kw-list"></div>
+              <div class="cfg-addrow">
+                <input class="cfg-textinput" id="cfg-kw-input" placeholder="e.g. confidential">
+                <button class="cfg-addbtn" id="cfg-kw-add">Add Keyword</button>
+              </div>
+            </div>
+
+            <div class="card cfg-block">
+              <div class="cfg-block-hd">
+                <div class="cfg-icon cfg-icon-purple">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <div>
+                  <div class="cfg-block-title">Quarantine Folder</div>
+                  <div class="cfg-block-sub">Files containing financial data are automatically moved here.</div>
+                </div>
+              </div>
+              <input class="cfg-textinput" id="cfg-quarantine-input" placeholder="./quarantine">
+            </div>
+
+            <div class="card cfg-block">
+              <div class="cfg-block-hd">
+                <div class="cfg-icon cfg-icon-green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div>
+                  <div class="cfg-block-title">Trusted IP Addresses</div>
+                  <div class="cfg-block-sub">Outbound connections to these IPs are not flagged as suspicious.</div>
+                </div>
+              </div>
+              <div class="cfg-chips cfg-chips-blue" id="cfg-ip-list"></div>
+              <div class="cfg-addrow">
+                <input class="cfg-textinput" id="cfg-ip-input" placeholder="e.g. 8.8.8.8">
+                <button class="cfg-addbtn" id="cfg-ip-add">Add IP</button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT: read-only info -->
+          <div class="cfg-sidebar">
+
+            <div class="card cfg-block">
+              <div class="cfg-block-hd">
+                <div class="cfg-icon cfg-icon-cyan">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                </div>
+                <div>
+                  <div class="cfg-block-title">Event Database</div>
+                  <div class="cfg-block-sub">Read-only. Restart required to change.</div>
+                </div>
+              </div>
+              <div class="cfg-readonly-val" id="cfg-db">—</div>
+            </div>
+
+            <div class="card cfg-block">
+              <div class="cfg-block-hd">
+                <div class="cfg-icon cfg-icon-red">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <div>
+                  <div class="cfg-block-title">Policy Rules</div>
+                  <div class="cfg-block-sub">What happens when sensitive content is detected.</div>
+                </div>
+              </div>
+              <ul class="cfg-policy">
+                <li><span class="badge badge-BLOCK">BLOCK</span><span>Credentials — password, API key, token</span></li>
+                <li><span class="badge badge-QUARANTINE">QUARANTINE</span><span>Financial data — credit card numbers</span></li>
+                <li><span class="badge badge-ENCRYPT">ENCRYPT</span><span>Proprietary keyword match</span></li>
+                <li><span class="badge badge-ALERT">ALERT</span><span>Personal info — names, SSN</span></li>
+                <li><span class="badge badge-ALLOW">ALLOW</span><span>No sensitive content found</span></li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

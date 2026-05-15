@@ -1,0 +1,367 @@
+# ============================================================
+# DLP ENGINE — core detection, no UI dependencies
+# ============================================================
+
+import os
+import re
+import json
+import time
+import shutil
+import sqlite3
+import threading
+from datetime import datetime
+
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+from cryptography.fernet import Fernet
+
+CONFIG_FILE = "config.json"
+KEY_FILE = "dlp.key"
+
+
+def load_config():
+    defaults = {
+        "watch_paths": ["./monitor"],
+        "quarantine_path": "./quarantine",
+        "db": "dlp.db",
+        "trusted_ips": ["8.8.8.8", "1.1.1.1"],
+        "keywords": ["confidential", "secret", "password", "api_key", "ssn"],
+    }
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            defaults.update(json.load(f))
+    return defaults
+
+
+def load_or_create_key():
+    if os.path.exists(KEY_FILE):
+        with open(KEY_FILE, "rb") as f:
+            return f.read()
+    key = Fernet.generate_key()
+    with open(KEY_FILE, "wb") as f:
+        f.write(key)
+    return key
+
+
+CONFIG = load_config()
+
+# ============================================================
+# DATABASE
+# ============================================================
+
+class DB:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self.conn = sqlite3.connect(CONFIG["db"], check_same_thread=False)
+        self.conn.execute("""
+        CREATE TABLE IF NOT EXISTS logs (
+            id INTEGER PRIMARY KEY,
+            time TEXT,
+            type TEXT,
+            action TEXT,
+            source TEXT,
+            details TEXT
+        )
+        """)
+        self.conn.commit()
+
+    def log(self, t, a, s, d):
+        with self._lock:
+            self.conn.execute(
+                "INSERT INTO logs VALUES (NULL,?,?,?,?,?)",
+                (datetime.now().isoformat(), t, a, s, d)
+            )
+            self.conn.commit()
+
+    def recent(self, limit=200, action=None):
+        with self._lock:
+            if action and action != "ALL":
+                cur = self.conn.execute(
+                    "SELECT time, type, action, source, details FROM logs "
+                    "WHERE action=? ORDER BY id DESC LIMIT ?",
+                    (action, limit)
+                )
+            else:
+                cur = self.conn.execute(
+                    "SELECT time, type, action, source, details FROM logs "
+                    "ORDER BY id DESC LIMIT ?",
+                    (limit,)
+                )
+            return cur.fetchall()
+
+    def stats(self):
+        with self._lock:
+            cur = self.conn.execute(
+                "SELECT action, COUNT(*) FROM logs GROUP BY action"
+            )
+            result = {r[0]: r[1] for r in cur.fetchall()}
+            total_cur = self.conn.execute("SELECT COUNT(*) FROM logs")
+            result["TOTAL"] = total_cur.fetchone()[0]
+            return result
+
+# ============================================================
+# CLASSIFIER
+# ============================================================
+
+class Classifier:
+    PATTERNS = {
+        "CREDENTIAL": (
+            r"password\s*[:=]\s*\S+"
+            r"|api[_-]?key\s*[:=]\s*\S+"
+            r"|token\s*[:=]\s*\S+"
+            r"|secret\s*[:=]\s*\S+"
+        ),
+        "FINANCIAL": (
+            r"\b4[0-9]{12}(?:[0-9]{3})?\b"
+            r"|\b5[1-5][0-9]{14}\b"
+            r"|\b3[47][0-9]{13}\b"
+            r"|\b6(?:011|5[0-9]{2})[0-9]{12}\b"
+        ),
+        "PII": r"\b[A-Z][a-z]{1,20} [A-Z][a-z]{1,20}\b",
+    }
+
+    def detect(self, text):
+        hits = []
+        for label, pattern in self.PATTERNS.items():
+            if re.search(pattern, text, re.I):
+                hits.append(label)
+        for word in CONFIG["keywords"]:
+            if word.lower() in text.lower():
+                hits.append("PROPRIETARY")
+                break
+        return list(set(hits))
+
+# ============================================================
+# POLICY
+# ============================================================
+
+class Policy:
+    def evaluate(self, findings):
+        if "CREDENTIAL" in findings:
+            return "BLOCK"
+        if "FINANCIAL" in findings:
+            return "QUARANTINE"
+        if "PROPRIETARY" in findings:
+            return "ENCRYPT"
+        if "PII" in findings:
+            return "ALERT"
+        return "ALLOW"
+
+# ============================================================
+# ENCRYPTION
+# ============================================================
+
+class Encryptor:
+    def __init__(self):
+        self.f = Fernet(load_or_create_key())
+
+    def encrypt(self, path):
+        try:
+            with open(path, "rb") as fh:
+                data = fh.read()
+            enc_path = path + ".enc"
+            with open(enc_path, "wb") as fh:
+                fh.write(self.f.encrypt(data))
+            os.remove(path)
+            return enc_path
+        except Exception:
+            return None
+
+    def decrypt(self, path):
+        try:
+            with open(path, "rb") as fh:
+                data = fh.read()
+            out = path[:-4] if path.endswith(".enc") else path + ".dec"
+            with open(out, "wb") as fh:
+                fh.write(self.f.decrypt(data))
+            return out
+        except Exception:
+            return None
+
+# ============================================================
+# FILE SYSTEM HANDLER
+# ============================================================
+
+class Handler(FileSystemEventHandler):
+    DEBOUNCE = 1.5
+
+    def __init__(self, db, classifier, policy, enc, event_cb):
+        self.db = db
+        self.classifier = classifier
+        self.policy = policy
+        self.enc = enc
+        self.event_cb = event_cb
+        self._seen = {}
+        self._lock = threading.Lock()
+
+    def _debounce(self, path):
+        now = time.monotonic()
+        with self._lock:
+            if now - self._seen.get(path, 0) < self.DEBOUNCE:
+                return False
+            self._seen[path] = now
+        return True
+
+    def process(self, path, file_op="Modified"):
+        if not os.path.isfile(path):
+            return
+        if path.endswith(".enc"):
+            return
+        if not self._debounce(path):
+            return
+
+        try:
+            with open(path, "r", errors="ignore") as fh:
+                data = fh.read()
+        except (PermissionError, FileNotFoundError):
+            return
+
+        findings = self.classifier.detect(data)
+        fname = os.path.basename(path)
+
+        if not findings:
+            # Still log the file activity even if clean
+            self.event_cb({
+                "time":    datetime.now().isoformat(),
+                "type":    "ENDPOINT",
+                "action":  "ALLOW",
+                "source":  fname,
+                "details": f"FILE_{file_op.upper()} — File {file_op.lower()}: {fname}",
+            })
+            return
+
+        action = self.policy.evaluate(findings)
+
+        action_desc = {
+            "BLOCK":      f"Sensitive file DELETED: {fname}",
+            "QUARANTINE": f"Sensitive file moved to quarantine: {fname}",
+            "ENCRYPT":    f"Sensitive file encrypted: {fname}",
+            "ALERT":      f"Sensitive content detected in: {fname}",
+            "ALLOW":      f"File {file_op.lower()}: {fname}",
+        }.get(action, f"File {file_op.lower()}: {fname}")
+
+        try:
+            if action == "QUARANTINE":
+                os.makedirs(CONFIG["quarantine_path"], exist_ok=True)
+                dest = os.path.join(CONFIG["quarantine_path"], fname)
+                shutil.move(path, dest)
+            elif action == "BLOCK":
+                os.remove(path)
+            elif action == "ENCRYPT":
+                self.enc.encrypt(path)
+        except (FileNotFoundError, PermissionError):
+            pass
+
+        event = {
+            "time":    datetime.now().isoformat(),
+            "type":    "ENDPOINT",
+            "action":  action,
+            "source":  fname,
+            "details": f"{','.join(findings)} — {action_desc}",
+        }
+
+        self.db.log("ENDPOINT", action, path, event["details"])
+        self.event_cb(event)
+
+    def on_created(self, event):
+        if not event.is_directory:
+            self.process(event.src_path, "Created")
+
+    def on_modified(self, event):
+        if not event.is_directory:
+            self.process(event.src_path, "Modified")
+
+    def on_deleted(self, event):
+        if event.is_directory:
+            return
+        path = event.src_path
+        fname = os.path.basename(path)
+        if fname.endswith(".enc"):
+            return
+        # Skip if DLP itself triggered this deletion (processed recently)
+        if time.monotonic() - self._seen.get(path, 0) < 5.0:
+            return
+        ev = {
+            "time":    datetime.now().isoformat(),
+            "type":    "ENDPOINT",
+            "action":  "ALERT",
+            "source":  fname,
+            "details": f"FILE_DELETED — File was deleted: {fname}",
+        }
+        self.db.log("ENDPOINT", "ALERT", path, ev["details"])
+        self.event_cb(ev)
+
+# ============================================================
+# NETWORK DLP
+# ============================================================
+
+class NetworkDLP:
+    def __init__(self, classifier, event_cb):
+        self.classifier = classifier
+        self.event_cb = event_cb
+
+    def start(self):
+        import platform
+        if platform.system() == "Darwin":
+            return
+        try:
+            from scapy.all import sniff, Raw
+
+            def inspect(pkt):
+                if Raw not in pkt:
+                    return
+                payload = pkt[Raw].load.decode("utf-8", errors="ignore")
+                findings = self.classifier.detect(payload)
+                if findings:
+                    self.event_cb({
+                        "time": datetime.now().isoformat(),
+                        "type": "NETWORK",
+                        "action": "ALERT",
+                        "source": pkt.summary()[:60],
+                        "details": ",".join(findings),
+                    })
+
+            sniff(prn=inspect, store=0, filter="tcp")
+        except ImportError:
+            pass
+        except Exception:
+            pass
+
+# ============================================================
+# ENGINE
+# ============================================================
+
+class DLPEngine:
+    def __init__(self, db, event_callback=None):
+        self.db = db
+        self.event_cb = event_callback or (lambda e: None)
+        self.classifier = Classifier()
+        self.policy = Policy()
+        self.enc = Encryptor()
+        self.obs = Observer()
+        self.net = NetworkDLP(self.classifier, self.event_cb)
+        self._running = False
+
+    def start(self):
+        self._running = True
+
+        for p in CONFIG["watch_paths"]:
+            os.makedirs(p, exist_ok=True)
+            handler = Handler(
+                self.db, self.classifier, self.policy,
+                self.enc, self.event_cb
+            )
+            self.obs.schedule(handler, p, recursive=True)
+
+        self.obs.start()
+
+        import threading as _t
+        _t.Thread(target=self.net.start, daemon=True).start()
+
+        while self._running:
+            time.sleep(1)
+
+    def stop(self):
+        self._running = False
+        self.obs.stop()
+        self.obs.join()
