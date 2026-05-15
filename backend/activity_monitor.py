@@ -481,13 +481,33 @@ class ActivityMonitor:
     }
 
     def _poll_window_titles(self):
-        """Read current browser tab titles directly from OS window list."""
+        """Read current browser tab titles from visible browser windows only.
+
+        Uses IsWindowVisible() to skip background Chrome/Edge processes that
+        retain a window title even after the browser window is closed.
+        """
         import subprocess, json
 
         proc_list = ",".join(self._BROWSER_PROCS.keys())
+
+        # C# type compiled once per PowerShell session (cached by name 'DlpWinVis')
+        type_src = (
+            "using System; using System.Runtime.InteropServices; "
+            "public class DlpWinVis { "
+            "[DllImport(\"user32.dll\")] public static extern bool IsWindowVisible(IntPtr h); "
+            "}"
+        )
         cmd = (
+            "if (-not ([System.Management.Automation.PSTypeName]'DlpWinVis').Type) { "
+            f"  Add-Type -TypeDefinition '{type_src}' -ErrorAction SilentlyContinue "
+            "} ; "
             f"Get-Process {proc_list} -ErrorAction SilentlyContinue | "
-            "Where-Object { $_.MainWindowTitle -ne '' } | "
+            "Where-Object { "
+            "  $h = $_.MainWindowHandle ; "
+            "  $h -ne [IntPtr]::Zero -and "
+            "  $_.MainWindowTitle -ne '' -and "
+            "  [DlpWinVis]::IsWindowVisible($h) "
+            "} | "
             "Select-Object Name,MainWindowTitle | "
             "ConvertTo-Json -Compress -Depth 1"
         )
