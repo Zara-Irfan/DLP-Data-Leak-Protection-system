@@ -711,6 +711,17 @@ class ActivityMonitor:
                     )
                     return
 
+        # ── Skip browser subprocess noise ────────────────────
+        # Browsers spawn 10+ subprocesses (GPU, renderer, network service, crash
+        # handler, etc.).  Each new PID would fire a false "Chrome was opened" event.
+        # Browsing activity is tracked more accurately via history and window titles.
+        _BROWSER_EXES = frozenset({
+            "chrome.exe", "msedge.exe", "firefox.exe", "brave.exe",
+            "opera.exe", "chromium.exe", "iexplore.exe",
+        })
+        if name in _BROWSER_EXES:
+            return
+
         # ── Normal app launch — audit trail ──────────────────
         self._emit(
             "ALLOW", "Process",
