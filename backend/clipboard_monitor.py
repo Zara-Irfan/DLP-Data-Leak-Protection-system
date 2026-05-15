@@ -194,21 +194,19 @@ class ClipboardMonitor:
 
         compose = _find_compose_window()
         labels  = ", ".join(findings)
-        preview = text[:150].replace("\n", " ").replace("\r", "")
-        if len(text) > 150:
-            preview += "…"
 
         if compose:
             self._emit(
                 "BLOCK", "Email/Clipboard",
                 f"EMAIL_DATA_LEAK — {labels} detected in clipboard while email compose "
-                f"window is open ('{compose[:70]}') — "
-                f"sensitive data is about to be sent via email. "
-                f"Content: {preview}"
+                f"window is open\n"
+                f"Window: {compose}\n"
+                f"Sensitive data is about to be sent via email.\n\n"
+                f"--- Clipboard Content ---\n{text}"
             )
         else:
             self._emit(
                 "ALERT", "Clipboard",
-                f"SENSITIVE_CLIPBOARD — {labels} copied to clipboard — "
-                f"sensitive data detected. Content: {preview}"
+                f"SENSITIVE_CLIPBOARD — {labels} copied to clipboard\n\n"
+                f"--- Clipboard Content ---\n{text}"
             )

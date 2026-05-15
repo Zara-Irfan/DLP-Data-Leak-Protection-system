@@ -432,7 +432,9 @@ class ActivityMonitor:
         if domain and any(domain == d or domain.endswith("." + d) for d in _UPLOAD_DOMAINS):
             self._emit("ALERT", browser,
                 f"DATA_EXFIL — Opened file-sharing site {domain} in {browser} — "
-                f"risk of data being uploaded/exfiltrated  |  '{page}'"
+                f"risk of data being uploaded or exfiltrated\n"
+                f"Page Title: {page}\n"
+                f"Full URL: {url}"
             )
             return
 
@@ -440,7 +442,9 @@ class ActivityMonitor:
         if domain and any(domain == d or domain.endswith("." + d) for d in _PASTE_DOMAINS):
             self._emit("ALERT", browser,
                 f"DATA_EXFIL — Opened paste site {domain} in {browser} — "
-                f"sensitive data may have been pasted/shared  |  '{page}'"
+                f"sensitive data may have been pasted or shared\n"
+                f"Page Title: {page}\n"
+                f"Full URL: {url}"
             )
             return
 
@@ -448,7 +452,10 @@ class ActivityMonitor:
         for pat, desc in _EXFIL_URL_PATTERNS:
             if re.search(pat, url):
                 self._emit("ALERT", browser,
-                    f"SUSPICIOUS_URL — {desc} on {domain}  |  '{page}'"
+                    f"SUSPICIOUS_URL — {desc}\n"
+                    f"Site: {domain}\n"
+                    f"Page Title: {page}\n"
+                    f"Full URL: {url}"
                 )
                 return
 
@@ -457,8 +464,10 @@ class ActivityMonitor:
             r"^(localhost|127\.|192\.168\.|10\.|172\.(?:1[6-9]|2\d|3[01])\.)", domain
         ):
             self._emit("ALERT", browser,
-                f"UNENCRYPTED — Visited {domain} over unencrypted HTTP — "
-                f"data visible on the network  |  '{page}'"
+                f"UNENCRYPTED — Visited {domain} over plain HTTP — "
+                f"all data sent to this site is visible on the network\n"
+                f"Page Title: {page}\n"
+                f"Full URL: {url}"
             )
 
     # ── Window title monitoring (real-time, exact page titles) ───

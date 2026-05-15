@@ -16,6 +16,7 @@ let logEvents       = [];   // event log page data
 let activeFilter    = 'ALL';
 let searchQuery     = '';
 let socket          = null;
+let _autoRefresh    = null; // interval handle for Event Log auto-refresh
 
 const stats = { BLOCK: 0, QUARANTINE: 0, ENCRYPT: 0, ALERT: 0, ALLOW: 0, TOTAL: 0 };
 let timelineHistory = [];
@@ -338,6 +339,21 @@ function bindDashboardControls() {
 
 // ── Navigation ───────────────────────────────────────────────
 
+function startEventLogAutoRefresh() {
+  clearInterval(_autoRefresh);
+  _autoRefresh = setInterval(() => {
+    const logPage = $('page-events');
+    if (logPage && logPage.classList.contains('active')) {
+      loadEventLog();
+    }
+  }, 15000); // reload every 15 seconds automatically
+}
+
+function stopEventLogAutoRefresh() {
+  clearInterval(_autoRefresh);
+  _autoRefresh = null;
+}
+
 function bindNav() {
   $$('.nav-item').forEach(link => {
     link.addEventListener('click', e => {
@@ -351,8 +367,9 @@ function bindNav() {
       const page = document.getElementById('page-' + section);
       if (page) page.classList.add('active');
 
-      if (section === 'config') loadConfig();
-      if (section === 'events') loadEventLog();
+      if (section === 'config') { stopEventLogAutoRefresh(); loadConfig(); }
+      if (section === 'dashboard') { stopEventLogAutoRefresh(); }
+      if (section === 'events') { loadEventLog(); startEventLogAutoRefresh(); }
     });
   });
 }
@@ -504,12 +521,9 @@ function openEventModal(ev) {
   $('modal-action').innerHTML =
     `<span class="badge badge-${escHtml(ev.action)}">${escHtml(ev.action)}</span>`;
 
-  // Format the details string so each " — " and " | " starts on a new line
+  // Show the full raw details — backend now uses \n for structure
   const raw = ev.details || '—';
-  $('modal-details').textContent = raw
-    .replace(/\s*[—–]\s*/g, '\n\n')
-    .replace(/\s*\|\s*/g, '\n\n')
-    .trim();
+  $('modal-details').textContent = raw.trim();
 
   $('event-modal').style.display = 'flex';
 }
@@ -534,9 +548,21 @@ function connectSocket() {
   socket = io({ transports: ['websocket', 'polling'] });
 
   socket.on('connect', () => {
-    $('conn-dot').className   = 'conn-dot connected';
+    $('conn-dot').className     = 'conn-dot connected';
     $('conn-label').textContent = 'Connected';
     $('live-badge').classList.remove('offline');
+
+    // Reload everything on (re)connect so missed events are caught
+    fetch('/api/logs?limit=500')
+      .then(r => r.json())
+      .then(rows => { liveEvents = rows; rows.forEach(ev => pushTimeline(ev.action)); renderDashboardTable(); })
+      .catch(() => {});
+    fetch('/api/stats')
+      .then(r => r.json())
+      .then(data => applyStats(data))
+      .catch(() => {});
+    const logPage = $('page-events');
+    if (logPage && logPage.classList.contains('active')) loadEventLog();
   });
 
   socket.on('disconnect', () => {

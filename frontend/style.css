@@ -806,8 +806,9 @@ html, body {
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 340px;
+  max-height: 480px;
   overflow-y: auto;
+  font-family: 'Consolas', 'Courier New', monospace;
 }
 
 .clickable-row {
