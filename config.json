@@ -11,11 +11,13 @@
   "keywords": [
     "confidential",
     "secret",
-    "password",
     "api_key",
     "ssn",
     "social security",
     "credit card",
-    "private key"
+    "private key",
+    "date of birth",
+    "email",
+    "password"
   ]
 }

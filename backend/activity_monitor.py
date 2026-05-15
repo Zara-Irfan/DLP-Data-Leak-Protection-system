@@ -226,8 +226,8 @@ class ActivityMonitor:
     Polls every POLL_SECS seconds. All events go to the DLP database
     and are broadcast to the dashboard in real time.
     """
-    POLL_SECS       = 5
-    CONN_POLL_SECS  = 8
+    POLL_SECS       = 1
+    CONN_POLL_SECS  = 3
     NET_SEEN_MAX    = 20_000
 
     def __init__(self, db, event_callback):
@@ -300,7 +300,7 @@ class ActivityMonitor:
             "source":  source,
             "details": details,
         }
-        self.db.log("ACTIVITY", action, source, details)
+        event["id"] = self.db.log("ACTIVITY", action, source, details)
         self.callback(event)
 
     # ── Browser monitoring ───────────────────────────────────

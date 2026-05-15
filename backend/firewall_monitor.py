@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 FIREWALL_LOG = Path(r"C:\Windows\System32\LogFiles\Firewall\pfirewall.log")
-POLL_SECS    = 2
+POLL_SECS    = 1
 
 # ── Threat intelligence ───────────────────────────────────────────────────────
 
@@ -158,7 +158,7 @@ class FirewallMonitor:
             "source":  source,
             "details": details,
         }
-        self.db.log("FIREWALL", action, source, details)
+        ev["id"] = self.db.log("FIREWALL", action, source, details)
         self.callback(ev)
 
     def _dedup_emit(self, key: str, action: str, source: str, details: str):

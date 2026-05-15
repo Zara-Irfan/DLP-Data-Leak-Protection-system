@@ -221,14 +221,15 @@ class Handler(FileSystemEventHandler):
         fname = os.path.basename(path)
 
         if not findings:
-            # Still log the file activity even if clean
-            self.event_cb({
+            ev = {
                 "time":    datetime.now().isoformat(),
                 "type":    "ENDPOINT",
                 "action":  "ALLOW",
                 "source":  fname,
                 "details": f"FILE_{file_op.upper()} — File {file_op.lower()}: {fname}",
-            })
+            }
+            ev["id"] = self.db.log("ENDPOINT", "ALLOW", path, ev["details"])
+            self.event_cb(ev)
             return
 
         action = self.policy.evaluate(findings)
@@ -260,8 +261,7 @@ class Handler(FileSystemEventHandler):
             "source":  fname,
             "details": f"{','.join(findings)} — {action_desc}",
         }
-
-        self.db.log("ENDPOINT", action, path, event["details"])
+        event["id"] = self.db.log("ENDPOINT", action, path, event["details"])
         self.event_cb(event)
 
     def on_created(self, event):
@@ -289,7 +289,7 @@ class Handler(FileSystemEventHandler):
             "source":  fname,
             "details": f"FILE_DELETED — File was deleted: {fname}",
         }
-        self.db.log("ENDPOINT", "ALERT", path, ev["details"])
+        ev["id"] = self.db.log("ENDPOINT", "ALERT", path, ev["details"])
         self.event_cb(ev)
 
 # ============================================================

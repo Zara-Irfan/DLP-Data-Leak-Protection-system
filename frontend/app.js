@@ -603,7 +603,7 @@ function connectSocket() {
     // Reload everything on (re)connect so missed events are caught
     fetch('/api/logs?limit=500')
       .then(r => r.json())
-      .then(rows => { liveEvents = rows; rows.forEach(ev => pushTimeline(ev.action)); renderDashboardTable(); })
+      .then(rows => { liveEvents = rows; rows.forEach(ev => { pushTimeline(ev.action); _trackId(ev); }); renderDashboardTable(); })
       .catch(() => {});
     fetch('/api/stats')
       .then(r => r.json())
@@ -652,7 +652,7 @@ function init() {
     .then(r => r.json())
     .then(rows => {
       liveEvents = rows;
-      rows.forEach(ev => pushTimeline(ev.action));
+      rows.forEach(ev => { pushTimeline(ev.action); _trackId(ev); });
       renderDashboardTable();
     })
     .catch(() => {});

@@ -123,7 +123,7 @@ def _attr(el, *tags_then_attr):
 
 
 class WindowsLogMonitor:
-    POLL_SECS = 10
+    POLL_SECS = 2
 
     def __init__(self, db, event_callback):
         self.db        = db
@@ -165,7 +165,7 @@ class WindowsLogMonitor:
             "source":  source,
             "details": details,
         }
-        self.db.log("SYSLOG", action, source, details)
+        event["id"] = self.db.log("SYSLOG", action, source, details)
         self.callback(event)
 
     def _scan(self, initial: bool):

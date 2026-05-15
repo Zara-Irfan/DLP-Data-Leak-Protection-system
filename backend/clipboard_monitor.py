@@ -14,7 +14,7 @@ import time
 import threading
 from datetime import datetime
 
-POLL_SECS  = 2
+POLL_SECS  = 1
 DEDUP_SECS = 120  # seconds before re-alerting on exact same clipboard content
 
 # ── Sensitive data patterns ────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ class ClipboardMonitor:
             "source":  source,
             "details": details,
         }
-        self.db.log("CLIPBOARD", action, source, details)
+        ev["id"] = self.db.log("CLIPBOARD", action, source, details)
         self.callback(ev)
 
     # ── Compose window watcher ────────────────────────────────────────────────
