@@ -181,7 +181,8 @@ function prependLiveEvent(ev) {
   if (liveEvents.length > MAX_LIVE_ROWS) liveEvents.pop();
 
   if (!matchesFilter(ev)) {
-    const shown = liveEvents.filter(matchesFilter).length;
+    // Count actual DOM rows — accurate whether showing live or API-fetched results
+    const shown = tbody.children.length;
     $('row-count').textContent = `${shown} event${shown !== 1 ? 's' : ''} shown`;
     return;
   }
@@ -190,7 +191,7 @@ function prependLiveEvent(ev) {
   tbody.insertBefore(tr, tbody.firstChild);
   while (tbody.children.length > MAX_LIVE_ROWS) tbody.removeChild(tbody.lastChild);
 
-  const shown = liveEvents.filter(matchesFilter).length;
+  const shown = tbody.children.length;
   $('row-count').textContent = `${shown} event${shown !== 1 ? 's' : ''} shown`;
 }
 
@@ -290,6 +291,28 @@ function bindEventLogControls() {
 
 // ── Dashboard filter + search ────────────────────────────────
 
+function fetchAndRenderFiltered(action) {
+  const tbody    = $('events-body');
+  const emptyRow = $('empty-row');
+  $('row-count').textContent    = 'Loading…';
+  $('filter-label').textContent = `Filter: ${action}`;
+
+  fetch(`/api/logs?limit=500&action=${action}`)
+    .then(r => r.json())
+    .then(rows => {
+      while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+      if (rows.length === 0) {
+        tbody.appendChild(emptyRow);
+        $('row-count').textContent = '0 events shown';
+        return;
+      }
+      rows.forEach(ev => tbody.appendChild(buildRow(ev, false)));
+      $('row-count').textContent =
+        `${rows.length} event${rows.length !== 1 ? 's' : ''} shown`;
+    })
+    .catch(() => renderDashboardTable());
+}
+
 function bindDashboardControls() {
   $('filter-group').addEventListener('click', e => {
     const btn = e.target.closest('.filter-btn');
@@ -297,7 +320,11 @@ function bindDashboardControls() {
     $$('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeFilter = btn.dataset.filter;
-    renderDashboardTable();
+    if (activeFilter === 'ALL') {
+      renderDashboardTable();
+    } else {
+      fetchAndRenderFiltered(activeFilter);
+    }
   });
 
   $('search-input').addEventListener('input', () => {
