@@ -247,7 +247,9 @@ function _pollNewEvents() {
       if (emptyRow.parentNode === tbody) tbody.removeChild(emptyRow);
 
       let added = 0;
-      rows.forEach(ev => {
+      // DB returns DESC (newest first). Reverse so we insert oldest→newest;
+      // each insertBefore(firstChild) leaves the newest at the very top.
+      rows.slice().reverse().forEach(ev => {
         if (_shownIds.has(ev.id)) return; // already in table
         _trackId(ev);
         logEvents.unshift(ev);

@@ -297,9 +297,10 @@ class Handler(FileSystemEventHandler):
 # ============================================================
 
 class NetworkDLP:
-    def __init__(self, classifier, event_cb):
+    def __init__(self, classifier, db, event_cb):
         self.classifier = classifier
-        self.event_cb = event_cb
+        self.db         = db
+        self.event_cb   = event_cb
 
     def start(self):
         import platform
@@ -314,13 +315,17 @@ class NetworkDLP:
                 payload = pkt[Raw].load.decode("utf-8", errors="ignore")
                 findings = self.classifier.detect(payload)
                 if findings:
-                    self.event_cb({
-                        "time": datetime.now().isoformat(),
-                        "type": "NETWORK",
-                        "action": "ALERT",
-                        "source": pkt.summary()[:60],
-                        "details": ",".join(findings),
-                    })
+                    source  = pkt.summary()[:60]
+                    details = ",".join(findings)
+                    ev = {
+                        "time":    datetime.now().isoformat(),
+                        "type":    "NETWORK",
+                        "action":  "ALERT",
+                        "source":  source,
+                        "details": details,
+                    }
+                    ev["id"] = self.db.log("NETWORK", "ALERT", source, details)
+                    self.event_cb(ev)
 
             sniff(prn=inspect, store=0, filter="tcp")
         except ImportError:
@@ -340,7 +345,7 @@ class DLPEngine:
         self.policy = Policy()
         self.enc = Encryptor()
         self.obs = Observer()
-        self.net = NetworkDLP(self.classifier, self.event_cb)
+        self.net = NetworkDLP(self.classifier, self.db, self.event_cb)
         self._running = False
 
     def start(self):

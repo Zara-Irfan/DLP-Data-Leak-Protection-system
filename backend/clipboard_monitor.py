@@ -62,14 +62,27 @@ def _get_clipboard() -> str:
 
 
 def _get_all_window_titles() -> list:
+    """Return titles of all VISIBLE top-level windows (skips background/hidden processes)."""
     try:
+        type_src = (
+            "using System; using System.Runtime.InteropServices; "
+            "public class DlpCbWinVis { "
+            "[DllImport(\"user32.dll\")] public static extern bool IsWindowVisible(IntPtr h); "
+            "}"
+        )
         cmd = (
-            "Get-Process | Where-Object { $_.MainWindowTitle -ne '' } | "
+            "if (-not ([System.Management.Automation.PSTypeName]'DlpCbWinVis').Type) { "
+            f"  Add-Type -TypeDefinition '{type_src}' -ErrorAction SilentlyContinue "
+            "} ; "
+            "Get-Process | Where-Object { "
+            "  $h = $_.MainWindowHandle ; "
+            "  $h -ne [IntPtr]::Zero -and $_.MainWindowTitle -ne '' -and "
+            "  [DlpCbWinVis]::IsWindowVisible($h) } | "
             "Select-Object -ExpandProperty MainWindowTitle | ConvertTo-Json -Compress"
         )
         r = subprocess.run(
             ["powershell", "-NoProfile", "-NonInteractive", "-Command", cmd],
-            capture_output=True, text=True, timeout=4
+            capture_output=True, text=True, timeout=5
         )
         raw = (r.stdout or "").strip()
         if not raw:

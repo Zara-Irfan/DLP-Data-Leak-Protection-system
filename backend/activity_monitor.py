@@ -490,15 +490,15 @@ class ActivityMonitor:
 
         proc_list = ",".join(self._BROWSER_PROCS.keys())
 
-        # C# type compiled once per PowerShell session (cached by name 'DlpWinVis')
+        # C# type compiled once per PowerShell session (cached by name 'DlpAmWinVis')
         type_src = (
             "using System; using System.Runtime.InteropServices; "
-            "public class DlpWinVis { "
+            "public class DlpAmWinVis { "
             "[DllImport(\"user32.dll\")] public static extern bool IsWindowVisible(IntPtr h); "
             "}"
         )
         cmd = (
-            "if (-not ([System.Management.Automation.PSTypeName]'DlpWinVis').Type) { "
+            "if (-not ([System.Management.Automation.PSTypeName]'DlpAmWinVis').Type) { "
             f"  Add-Type -TypeDefinition '{type_src}' -ErrorAction SilentlyContinue "
             "} ; "
             f"Get-Process {proc_list} -ErrorAction SilentlyContinue | "
@@ -506,7 +506,7 @@ class ActivityMonitor:
             "  $h = $_.MainWindowHandle ; "
             "  $h -ne [IntPtr]::Zero -and "
             "  $_.MainWindowTitle -ne '' -and "
-            "  [DlpWinVis]::IsWindowVisible($h) "
+            "  [DlpAmWinVis]::IsWindowVisible($h) "
             "} | "
             "Select-Object Name,MainWindowTitle | "
             "ConvertTo-Json -Compress -Depth 1"
