@@ -51,7 +51,9 @@ else:
         _f.write(_session_key)
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path="")
-app.config["SECRET_KEY"] = _session_key
+app.config["SECRET_KEY"]             = _session_key
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"]   = False
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading",
                     logger=False, engineio_logger=False)
 
@@ -160,7 +162,10 @@ def auth_google_callback():
         session["user_picture"] = picture
         session["subscribed"]   = is_user_subscribed(user)
         return redirect("/") if session["subscribed"] else redirect("/pricing")
-    except Exception:
+    except Exception as e:
+        import traceback
+        print("\n[OAuth Error]", type(e).__name__, ":", e)
+        traceback.print_exc()
         return redirect("/login?error=oauth_error")
 
 @app.route("/logout")
