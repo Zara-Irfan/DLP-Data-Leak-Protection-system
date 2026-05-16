@@ -138,7 +138,11 @@ function renderTimeline() {
   if (!chart) return;
   chart.innerHTML = '';
 
-  const padding = TIMELINE_BINS - timelineHistory.length;
+  const count = timelineHistory.length;
+  const tw = $('timeline-window');
+  if (tw) tw.textContent = count > 0 ? `last ${count} event${count === 1 ? '' : 's'}` : 'no events yet';
+
+  const padding = TIMELINE_BINS - count;
   for (let i = 0; i < padding; i++) {
     const bar = document.createElement('div');
     bar.className = 'tl-bar empty';
@@ -615,18 +619,96 @@ function bindConfigControls() {
 
 // ── Event detail modal ───────────────────────────────────────
 
+const _ACTION_META = {
+  BLOCK:      { icon: '🚫', label: 'Access Blocked',   color: '#ef4444' },
+  QUARANTINE: { icon: '🔒', label: 'File Quarantined', color: '#f97316' },
+  ENCRYPT:    { icon: '🔐', label: 'File Encrypted',   color: '#a855f7' },
+  ALERT:      { icon: '⚠️',  label: 'Alert Raised',    color: '#eab308' },
+  ALLOW:      { icon: '✅',  label: 'Access Allowed',  color: '#22c55e' },
+};
+
+const _CLASS_META = {
+  CREDENTIAL:    { icon: '🔑', label: 'Credential Leak' },
+  FINANCIAL:     { icon: '💳', label: 'Financial Data' },
+  PII:           { icon: '👤', label: 'Personal Info (PII)' },
+  PROPRIETARY:   { icon: '🏢', label: 'Proprietary Content' },
+  ENC_TAMPER:    { icon: '⚠️',  label: 'Encryption Tampered' },
+  BRUTE_FORCE:   { icon: '🔨', label: 'Brute Force Attack' },
+};
+
+const _TYPE_ICON = {
+  ENDPOINT:  '📄', NETWORK:  '🌐', BROWSER:  '🌐',
+  PROCESS:   '⚙️',  CLIPBOARD: '📋', WINDOWS: '🛡️',
+  FIREWALL:  '🔥',
+};
+
+const _THREAT_CLASSES = new Set(Object.keys(_CLASS_META));
+
+function _parseDetails(raw) {
+  // Format: "CLASS1,CLASS2 — description\nmore lines"
+  const m = raw.match(/^([\w ,]+?)\s*[—–\-]+\s*([\s\S]*)/);
+  if (!m) return { classifications: [], description: raw };
+  const classifications = m[1].split(',').map(c => c.trim()).filter(Boolean);
+  return { classifications, description: m[2].trim() };
+}
+
 function openEventModal(ev) {
-  $('modal-time').textContent   = fmtDateTime(ev.time);
-  $('modal-source').textContent = ev.source || '—';
+  const action = ev.action || 'ALLOW';
+  const type   = ev.type   || 'ENDPOINT';
+  const meta   = _ACTION_META[action] || { icon: 'ℹ️', label: action, color: '#94a3b8' };
+  const raw    = ev.details || '—';
+  const parsed = _parseDetails(raw);
 
+  // Header: colored accent border + badge + event ID
+  const headerBar = $('modal-header-bar');
+  headerBar.style.setProperty('--modal-accent', meta.color);
+  $('modal-action-badge').innerHTML =
+    `<span class="badge badge-${escHtml(action)}">${meta.icon}&nbsp;${escHtml(action)}</span>`;
+  $('modal-event-id').textContent = ev.id ? `#${ev.id}` : '';
+
+  // Source bar
+  $('modal-src-icon').textContent = _TYPE_ICON[type] || '📄';
+  $('modal-source').textContent   = ev.source || '—';
+  $('modal-src-sub').textContent  = type + ' event';
+
+  // Meta grid
+  $('modal-time').textContent = fmtDateTime(ev.time);
   $('modal-type').innerHTML =
-    `<span class="type-chip type-${escHtml(ev.type || 'ENDPOINT')}">${escHtml(ev.type || 'ENDPOINT')}</span>`;
-  $('modal-action').innerHTML =
-    `<span class="badge badge-${escHtml(ev.action)}">${escHtml(ev.action)}</span>`;
+    `<span class="type-chip type-${escHtml(type)}">${escHtml(type)}</span>`;
+  $('modal-id').textContent = ev.id ? `#${ev.id}` : '—';
 
-  // Show the full raw details — backend now uses \n for structure
-  const raw = ev.details || '—';
-  $('modal-details').textContent = raw.trim();
+  // Threat classification chips
+  const realClasses = parsed.classifications.filter(c => _THREAT_CLASSES.has(c));
+  const classSection = $('modal-classifications-section');
+  if (realClasses.length > 0) {
+    $('modal-classifications').innerHTML = realClasses.map(c => {
+      const cm = _CLASS_META[c];
+      return `<span class="modal-class-chip modal-chip-${escHtml(c)}">${cm.icon} ${escHtml(cm.label)}</span>`;
+    }).join('');
+    classSection.style.display = '';
+  } else {
+    classSection.style.display = 'none';
+  }
+
+  // What happened: action card
+  const actionBox = $('modal-action-box');
+  actionBox.style.setProperty('--modal-accent', meta.color);
+  $('modal-action-icon').textContent    = meta.icon;
+  $('modal-action-headline').textContent = meta.label;
+  $('modal-action-desc').innerHTML = parsed.description
+    .split('\n').map(l => escHtml(l)).join('<br>');
+
+  // Raw log (collapsible)
+  $('modal-details').textContent = raw;
+
+  // Copy button
+  const copyBtn = $('modal-copy-btn');
+  copyBtn.textContent = 'Copy';
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(raw)
+      .then(() => { copyBtn.textContent = 'Copied!'; setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000); })
+      .catch(() => {});
+  };
 
   $('event-modal').style.display = 'flex';
 }
@@ -654,6 +736,8 @@ function connectSocket() {
     $('conn-dot').className     = 'conn-dot connected';
     $('conn-label').textContent = 'Connected';
     $('live-badge').classList.remove('offline');
+    const ms = $('cfg-monitor-status');
+    if (ms) { ms.textContent = 'Active'; ms.style.color = 'var(--green)'; }
 
     // Reload everything on (re)connect so missed events are caught
     fetch('/api/logs?limit=500')
@@ -672,6 +756,8 @@ function connectSocket() {
     $('conn-dot').className   = 'conn-dot disconnected';
     $('conn-label').textContent = 'Disconnected';
     $('live-badge').classList.add('offline');
+    const ms = $('cfg-monitor-status');
+    if (ms) { ms.textContent = 'Offline'; ms.style.color = 'var(--red)'; }
   });
 
   socket.on('connect_error', () => {

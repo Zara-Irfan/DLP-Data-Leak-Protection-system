@@ -262,7 +262,8 @@ class Handler(FileSystemEventHandler):
                 )
             elif action == "ENCRYPT":
                 enc_path = path + ".enc"
-                self._dlp_enc[enc_path] = time.monotonic()
+                with self._lock:
+                    self._dlp_enc[enc_path] = time.monotonic()
                 self.enc.encrypt(path)
                 action_desc = (
                     f"File encrypted and access restricted: {fname}\n"
@@ -293,7 +294,9 @@ class Handler(FileSystemEventHandler):
     def _check_enc_tamper(self, path: str):
         """Alert and delete an encrypted file that was modified outside of DLP."""
         # 5-second grace window — skip if DLP itself just created this file
-        if time.monotonic() - self._dlp_enc.get(path, 0) < 5.0:
+        with self._lock:
+            created_at = self._dlp_enc.get(path, 0)
+        if time.monotonic() - created_at < 5.0:
             return
         if not self._debounce(path):
             return

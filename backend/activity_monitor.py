@@ -365,7 +365,8 @@ class ActivityMonitor:
     def _copy_db(self, src: Path) -> str | None:
         """Copy a locked browser SQLite file to a temp path."""
         try:
-            tmp = tempfile.mktemp(suffix=".db")
+            fd, tmp = tempfile.mkstemp(suffix=".db")
+            os.close(fd)
             shutil.copy2(str(src), tmp)
             return tmp
         except Exception:
@@ -407,7 +408,8 @@ class ActivityMonitor:
                 self._analyze_url(name, row["url"] or "", row["title"] or "")
 
         except Exception:
-            pass
+            # Mark as initialized even on error so we don't retry every poll cycle
+            self._browser_init.add(name)
         finally:
             try:
                 os.unlink(tmp)
@@ -449,7 +451,8 @@ class ActivityMonitor:
                 self._analyze_url(name, row["url"] or "", row["title"] or "")
 
         except Exception:
-            pass
+            # Mark as initialized even on error so we don't retry every poll cycle
+            self._browser_init.add(name)
         finally:
             try:
                 os.unlink(tmp)

@@ -211,7 +211,7 @@ class WindowsLogMonitor:
 
         if initial:
             since = (
-                datetime.utcnow().replace(tzinfo=timezone.utc) - timedelta(hours=24)
+                datetime.now(timezone.utc) - timedelta(hours=24)
             ).strftime("%Y-%m-%dT%H:%M:%S.000Z")
             time_clause = f"TimeCreated[@SystemTime >= '{since}']"
             parts = [p for p in [id_clause, time_clause] if p]
@@ -338,8 +338,8 @@ class WindowsLogMonitor:
             while self._bf_times and self._bf_times[0] < now - _BF_WINDOW:
                 self._bf_times.popleft()
             count = len(self._bf_times)
-            # Alert only on the exact threshold crossing (not on every subsequent event)
-            if count == _BF_THRESHOLD:
+            # Alert on threshold crossing and every N subsequent failures
+            if count >= _BF_THRESHOLD and count % _BF_THRESHOLD == 0:
                 self._emit(
                     "ALERT", f"Security@{computer}",
                     f"{hist_tag}BRUTE_FORCE — {count} failed logins in "

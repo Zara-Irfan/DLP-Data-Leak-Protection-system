@@ -79,7 +79,6 @@
               <div class="stat-value" id="cnt-block">0</div>
               <div class="stat-label">Blocked</div>
             </div>
-            <div class="stat-trend" id="trend-block"></div>
           </div>
 
           <div class="stat-card stat-quarantine">
@@ -90,7 +89,6 @@
               <div class="stat-value" id="cnt-quarantine">0</div>
               <div class="stat-label">Quarantined</div>
             </div>
-            <div class="stat-trend" id="trend-quarantine"></div>
           </div>
 
           <div class="stat-card stat-encrypt">
@@ -101,7 +99,6 @@
               <div class="stat-value" id="cnt-encrypt">0</div>
               <div class="stat-label">Encrypted</div>
             </div>
-            <div class="stat-trend" id="trend-encrypt"></div>
           </div>
 
           <div class="stat-card stat-alert">
@@ -112,7 +109,6 @@
               <div class="stat-value" id="cnt-alert">0</div>
               <div class="stat-label">Alerts</div>
             </div>
-            <div class="stat-trend" id="trend-alert"></div>
           </div>
 
           <div class="stat-card stat-allow">
@@ -123,7 +119,6 @@
               <div class="stat-value" id="cnt-allow">0</div>
               <div class="stat-label">Allowed</div>
             </div>
-            <div class="stat-trend" id="trend-allow"></div>
           </div>
         </div>
 
@@ -437,11 +432,29 @@
   <!-- ── EVENT DETAIL MODAL ── -->
   <div id="event-modal" class="modal-overlay" style="display:none">
     <div class="modal-box">
-      <div class="modal-header">
-        <span class="modal-title">Event Details</span>
-        <button id="modal-close" class="modal-close" title="Close">&#x2715;</button>
+
+      <!-- Header: action badge + event ID + close -->
+      <div class="modal-header" id="modal-header-bar">
+        <div class="modal-header-left">
+          <span id="modal-action-badge"></span>
+          <span class="modal-event-id" id="modal-event-id"></span>
+        </div>
+        <button id="modal-close" class="modal-close" title="Close (Esc)">&#x2715;</button>
       </div>
+
+      <!-- Source bar -->
+      <div class="modal-source-bar">
+        <span class="modal-src-icon" id="modal-src-icon">📄</span>
+        <div class="modal-src-text">
+          <div class="modal-src-name" id="modal-source"></div>
+          <div class="modal-src-sub" id="modal-src-sub"></div>
+        </div>
+      </div>
+
+      <!-- Scrollable body -->
       <div class="modal-body">
+
+        <!-- Meta: timestamp / channel / event ID -->
         <div class="modal-meta-grid">
           <div class="modal-field">
             <span class="modal-label">Timestamp</span>
@@ -452,18 +465,38 @@
             <span class="modal-value" id="modal-type"></span>
           </div>
           <div class="modal-field">
-            <span class="modal-label">Action</span>
-            <span class="modal-value" id="modal-action"></span>
-          </div>
-          <div class="modal-field">
-            <span class="modal-label">Source</span>
-            <span class="modal-value" id="modal-source"></span>
+            <span class="modal-label">Event ID</span>
+            <span class="modal-value modal-mono" id="modal-id"></span>
           </div>
         </div>
-        <div class="modal-field">
-          <span class="modal-label">Full Details</span>
+
+        <!-- Threat classification chips (hidden when clean) -->
+        <div id="modal-classifications-section">
+          <div class="modal-section-title">Threat Classification</div>
+          <div id="modal-classifications" class="modal-tags-row"></div>
+        </div>
+
+        <!-- What happened -->
+        <div>
+          <div class="modal-section-title">What Happened</div>
+          <div class="modal-action-box" id="modal-action-box">
+            <div class="modal-action-icon" id="modal-action-icon"></div>
+            <div>
+              <div class="modal-action-headline" id="modal-action-headline"></div>
+              <div class="modal-action-desc" id="modal-action-desc"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Raw log details (collapsible) -->
+        <details class="modal-raw-wrap">
+          <summary class="modal-raw-summary">Raw Log Details</summary>
+          <div class="modal-raw-toolbar">
+            <button class="modal-copy-btn" id="modal-copy-btn">Copy</button>
+          </div>
           <div id="modal-details" class="modal-details-text"></div>
-        </div>
+        </details>
+
       </div>
     </div>
   </div>

@@ -773,7 +773,7 @@ html, body {
 
 .modal-meta-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 14px 24px;
 }
 
@@ -816,6 +816,165 @@ html, body {
 }
 .clickable-row:hover td {
   background: var(--card-hover) !important;
+}
+
+/* ── Rich event detail modal additions ───────────────────── */
+
+.modal-header {
+  border-bottom: 3px solid var(--modal-accent, var(--border));
+  transition: border-color 0.2s;
+}
+.modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-event-id {
+  font-size: 12px;
+  color: var(--txt-muted);
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+/* Source bar */
+.modal-source-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.modal-src-icon { font-size: 22px; line-height: 1; }
+.modal-src-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--txt);
+  word-break: break-all;
+}
+.modal-src-sub {
+  font-size: 11px;
+  color: var(--txt-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 3px;
+}
+
+/* Section title */
+.modal-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--txt-muted);
+  margin-bottom: 10px;
+}
+
+/* Mono value */
+.modal-mono {
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+/* Threat classification chips */
+.modal-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.modal-class-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--txt);
+}
+.modal-chip-CREDENTIAL    { background: rgba(239,68,68,0.13);  border-color: rgba(239,68,68,0.32);  color: #fca5a5; }
+.modal-chip-FINANCIAL     { background: rgba(249,115,22,0.13); border-color: rgba(249,115,22,0.32); color: #fdba74; }
+.modal-chip-PII           { background: rgba(234,179,8,0.13);  border-color: rgba(234,179,8,0.32);  color: #fde047; }
+.modal-chip-PROPRIETARY   { background: rgba(168,85,247,0.13); border-color: rgba(168,85,247,0.32); color: #d8b4fe; }
+.modal-chip-ENC_TAMPER    { background: rgba(239,68,68,0.13);  border-color: rgba(239,68,68,0.32);  color: #fca5a5; }
+.modal-chip-BRUTE_FORCE   { background: rgba(239,68,68,0.16);  border-color: rgba(239,68,68,0.38);  color: #fca5a5; }
+
+/* What happened action card */
+.modal-action-box {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-left: 3px solid var(--modal-accent, var(--border));
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.modal-action-icon {
+  font-size: 26px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.modal-action-headline {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--txt);
+  margin-bottom: 6px;
+}
+.modal-action-desc {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--txt-dim);
+}
+
+/* Raw log collapsible */
+.modal-raw-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.modal-raw-summary {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--txt-muted);
+  cursor: pointer;
+  padding: 10px 14px;
+  list-style: none;
+  background: rgba(255,255,255,0.02);
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.modal-raw-summary::before { content: '▶'; font-size: 9px; transition: transform 0.15s; }
+details[open] .modal-raw-summary::before { transform: rotate(90deg); }
+.modal-raw-summary:hover { color: var(--txt); background: rgba(255,255,255,0.04); }
+.modal-raw-summary::-webkit-details-marker { display: none; }
+.modal-raw-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 14px 0;
+  background: var(--surface);
+}
+.modal-copy-btn {
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--txt-muted);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.modal-copy-btn:hover { color: var(--txt); border-color: var(--txt-muted); }
+.modal-raw-wrap .modal-details-text {
+  border: none;
+  border-radius: 0;
+  border-top: 1px solid var(--border);
+  max-height: 280px;
 }
 
 /* ── CLASSIFICATION TAGS ── */
@@ -1118,6 +1277,11 @@ html, body {
   gap: 8px;
   min-height: 36px;
   padding: 4px 0;
+}
+.cfg-chips-blue .cfg-chip {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .cfg-chip {
