@@ -228,7 +228,7 @@ class Handler(FileSystemEventHandler):
                 "type":    "ENDPOINT",
                 "action":  "ALLOW",
                 "source":  fname,
-                "details": f"FILE_{file_op.upper()} — File {file_op.lower()}: {fname}",
+                "details": f"FILE_{file_op.upper()} — No sensitive content found in: {fname}",
             }
             ev["id"] = self.db.log("ENDPOINT", "ALLOW", path, ev["details"])
             self.event_cb(ev)
@@ -236,27 +236,49 @@ class Handler(FileSystemEventHandler):
 
         action = self.policy.evaluate(findings)
 
-        action_desc = {
-            "BLOCK":      f"Sensitive file DELETED: {fname}",
-            "QUARANTINE": f"Sensitive file moved to quarantine: {fname}",
-            "ENCRYPT":    f"Sensitive file encrypted: {fname}",
-            "ALERT":      f"Sensitive content detected in: {fname}",
-            "ALLOW":      f"File {file_op.lower()}: {fname}",
-        }.get(action, f"File {file_op.lower()}: {fname}")
+        qpath = os.path.abspath(CONFIG["quarantine_path"])
+        action_desc = ""
 
         try:
-            if action == "QUARANTINE":
-                os.makedirs(CONFIG["quarantine_path"], exist_ok=True)
-                dest = os.path.join(CONFIG["quarantine_path"], fname)
-                shutil.move(path, dest)
-            elif action == "BLOCK":
+            if action == "BLOCK":
                 os.remove(path)
+                action_desc = (
+                    f"ACCESS BLOCKED — File permanently deleted: {fname}\n"
+                    f"Reason: Contains credentials ({', '.join(findings)})\n"
+                    f"The file has been removed and cannot be accessed."
+                )
+            elif action == "QUARANTINE":
+                os.makedirs(qpath, exist_ok=True)
+                # Add timestamp to avoid overwriting existing quarantined files
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                dest_fname = f"{ts}_{fname}"
+                dest = os.path.join(qpath, dest_fname)
+                shutil.move(path, dest)
+                action_desc = (
+                    f"ACCESS BLOCKED — File moved to quarantine: {fname}\n"
+                    f"Reason: Contains financial data ({', '.join(findings)})\n"
+                    f"Quarantine location: {dest}\n"
+                    f"The file has been removed from its original location."
+                )
             elif action == "ENCRYPT":
                 enc_path = path + ".enc"
-                self._dlp_enc[enc_path] = time.monotonic()  # pre-register before file is created
+                self._dlp_enc[enc_path] = time.monotonic()
                 self.enc.encrypt(path)
-        except (FileNotFoundError, PermissionError):
-            pass
+                action_desc = (
+                    f"File encrypted and access restricted: {fname}\n"
+                    f"Reason: Contains proprietary content ({', '.join(findings)})\n"
+                    f"Encrypted file: {enc_path}"
+                )
+            elif action == "ALERT":
+                action_desc = (
+                    f"Sensitive content detected — no action taken: {fname}\n"
+                    f"Reason: Contains personal information ({', '.join(findings)})\n"
+                    f"Review this file manually."
+                )
+            else:
+                action_desc = f"File {file_op.lower()}: {fname}"
+        except (FileNotFoundError, PermissionError) as e:
+            action_desc = f"Action attempted but failed ({e}): {fname}"
 
         event = {
             "time":    datetime.now().isoformat(),
