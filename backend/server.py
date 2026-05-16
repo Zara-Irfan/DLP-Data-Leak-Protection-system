@@ -71,11 +71,15 @@ _STATIC_EXTS = frozenset({
 
 @app.before_request
 def _require_auth():
+    # Logout handled here so static-file routing can't intercept it
+    if request.path == "/logout":
+        session.clear()
+        return redirect("/login")
     # Allow static assets
     ext = os.path.splitext(request.path)[1].lower()
     if ext in _STATIC_EXTS:
         return None
-    # Fully public routes (login page + Google OAuth + Stripe webhook)
+    # Fully public routes
     public = ("/login", "/auth/", "/webhook/stripe")
     if any(request.path.startswith(p) for p in public):
         return None
