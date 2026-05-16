@@ -63,7 +63,58 @@ class DB:
             details TEXT
         )
         """)
+        self.conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            name TEXT,
+            picture TEXT,
+            stripe_customer_id TEXT,
+            subscription_status TEXT DEFAULT 'trial',
+            created_at TEXT
+        )
+        """)
         self.conn.commit()
+
+    def get_user(self, email: str):
+        with self._lock:
+            cur = self.conn.execute(
+                "SELECT id, email, name, picture, stripe_customer_id, "
+                "subscription_status, created_at FROM users WHERE email=?",
+                (email,)
+            )
+            row = cur.fetchone()
+        if not row:
+            return None
+        return dict(zip(
+            ["id", "email", "name", "picture", "stripe_customer_id",
+             "subscription_status", "created_at"],
+            row
+        ))
+
+    def upsert_user(self, email: str, name: str, picture: str):
+        with self._lock:
+            self.conn.execute(
+                "INSERT INTO users (email, name, picture, subscription_status, created_at) "
+                "VALUES (?, ?, ?, 'trial', ?) "
+                "ON CONFLICT(email) DO UPDATE SET name=excluded.name, picture=excluded.picture",
+                (email, name, picture, datetime.now().isoformat())
+            )
+            self.conn.commit()
+
+    def set_subscription(self, email: str, status: str, customer_id: str = None):
+        with self._lock:
+            if customer_id:
+                self.conn.execute(
+                    "UPDATE users SET subscription_status=?, stripe_customer_id=? WHERE email=?",
+                    (status, customer_id, email)
+                )
+            else:
+                self.conn.execute(
+                    "UPDATE users SET subscription_status=? WHERE email=?",
+                    (status, email)
+                )
+            self.conn.commit()
 
     def log(self, t, a, s, d):
         with self._lock:

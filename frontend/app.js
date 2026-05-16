@@ -803,6 +803,18 @@ function init() {
     .then(data => applyStats(data))
     .catch(() => {});
 
+  // Populate sidebar user info
+  fetch('/api/me')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.authenticated) return;
+      const nameEl = $('sidebar-user-name');
+      if (nameEl) nameEl.textContent = data.name || data.email || '';
+      const av = $('sidebar-avatar');
+      if (av && data.picture) av.src = data.picture;
+    })
+    .catch(() => {});
+
   // Connect WebSocket
   connectSocket();
 }

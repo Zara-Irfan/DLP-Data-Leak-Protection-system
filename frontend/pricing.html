@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DLP Enterprise — Choose a Plan</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0d1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top nav ─────────────────────────────────────────── */
+    .topnav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 40px;
+      border-bottom: 1px solid #1e2a3a;
+      background: #0d1117;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .nav-brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-brand-icon svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .nav-brand-name { font-size: 16px; font-weight: 700; color: #f1f5f9; letter-spacing: -0.01em; }
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-user-name { font-size: 13px; color: #94a3b8; }
+    .nav-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #1e2a3a;
+      display: none;
+    }
+    .nav-logout {
+      font-size: 13px;
+      color: #475569;
+      text-decoration: none;
+      padding: 6px 12px;
+      border: 1px solid #1e2a3a;
+      border-radius: 6px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .nav-logout:hover { color: #94a3b8; border-color: #334155; }
+
+    /* ── Page content ────────────────────────────────────── */
+    .page {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 64px 24px 80px;
+    }
+
+    .trial-banner {
+      display: none;
+      background: rgba(99,102,241,0.1);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 13px;
+      color: #a5b4fc;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    .trial-banner strong { color: #c7d2fe; }
+
+    .expired-banner {
+      display: none;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 13px;
+      color: #fca5a5;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .page-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #f1f5f9;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .page-sub {
+      font-size: 16px;
+      color: #64748b;
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    /* ── Pricing grid ────────────────────────────────────── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 980px;
+      width: 100%;
+    }
+
+    .plan-card {
+      background: #161b27;
+      border: 1px solid #1e2a3a;
+      border-radius: 16px;
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .plan-card:hover {
+      border-color: #334155;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+    .plan-card.featured {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 1px rgba(99,102,241,0.3), 0 8px 30px rgba(99,102,241,0.15);
+    }
+
+    .popular-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #6366f1, #4f46e5);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 14px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+
+    .plan-name {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+    .plan-name.featured { color: #818cf8; }
+
+    .plan-price {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    .price-amount {
+      font-size: 44px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #f1f5f9;
+    }
+    .price-currency {
+      font-size: 22px;
+      font-weight: 600;
+      color: #94a3b8;
+      align-self: flex-start;
+      margin-top: 8px;
+    }
+    .price-period {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+
+    .plan-desc {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 32px;
+      flex: 1;
+    }
+    .plan-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+    .plan-features li svg {
+      width: 15px; height: 15px;
+      stroke: #34d399; fill: none;
+      stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .plan-features li.dim { color: #475569; }
+    .plan-features li.dim svg { stroke: #334155; }
+
+    .btn-plan {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+    }
+    .btn-plan:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-plan:active { transform: translateY(0); }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #94a3b8;
+    }
+    .btn-outline:hover { border-color: #475569; color: #e2e8f0; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(99,102,241,0.45); }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #1e2a3a;
+      color: #475569;
+    }
+    .btn-ghost:hover { border-color: #334155; color: #64748b; }
+
+    .btn-loading { opacity: 0.6; pointer-events: none; }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    .toast {
+      display: none;
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e2a3a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 13px;
+      color: #fca5a5;
+      z-index: 999;
+    }
+
+    @media (max-width: 768px) {
+      .pricing-grid { grid-template-columns: 1fr; max-width: 420px; }
+      .page-title { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top nav -->
+  <nav class="topnav">
+    <a href="/" class="nav-brand">
+      <div class="nav-brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <span class="nav-brand-name">DLP Enterprise</span>
+    </a>
+    <div class="nav-user">
+      <img class="nav-avatar" id="nav-avatar" src="" alt="" />
+      <span class="nav-user-name" id="nav-user-name"></span>
+      <a href="/logout" class="nav-logout">Sign out</a>
+    </div>
+  </nav>
+
+  <!-- Page -->
+  <div class="page">
+
+    <div class="trial-banner" id="trial-banner"></div>
+    <div class="expired-banner" id="expired-banner">Your free trial has ended. Subscribe below to regain access.</div>
+
+    <h1 class="page-title">Simple, transparent pricing</h1>
+    <p class="page-sub">Start free. Upgrade when you need more.</p>
+
+    <div class="pricing-grid">
+
+      <!-- Starter -->
+      <div class="plan-card">
+        <div class="plan-name">Starter</div>
+        <div class="plan-price">
+          <span class="price-currency">$</span>
+          <span class="price-amount">0</span>
+        </div>
+        <div class="price-period">14-day free trial</div>
+        <div class="plan-desc">Everything you need to get started. No credit card required.</div>
+        <ul class="plan-features">
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Real-time file monitoring</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Live security dashboard</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Block, quarantine &amp; encrypt</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Windows event monitoring</li>
+          <li class="dim"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Priority support</li>
+        </ul>
+        <a href="/" class="btn-plan btn-outline">Continue Trial</a>
+      </div>
+
+      <!-- Pro (featured) -->
+      <div class="plan-card featured">
+        <div class="popular-badge">Most Popular</div>
+        <div class="plan-name featured">Pro</div>
+        <div class="plan-price">
+          <span class="price-currency">$</span>
+          <span class="price-amount">29</span>
+        </div>
+        <div class="price-period">per month, billed monthly</div>
+        <div class="plan-desc">Full protection for professionals and small teams.</div>
+        <ul class="plan-features">
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Everything in Starter</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Network packet inspection</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Clipboard &amp; browser monitoring</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Firewall &amp; C2 detection</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Priority email support</li>
+        </ul>
+        <button class="btn-plan btn-primary" id="btn-subscribe" onclick="startCheckout()">Subscribe — $29/mo</button>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="plan-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">
+          <span class="price-amount" style="font-size:32px; margin-top:10px;">Custom</span>
+        </div>
+        <div class="price-period">contact us for pricing</div>
+        <div class="plan-desc">Unlimited devices, dedicated support and custom integrations.</div>
+        <ul class="plan-features">
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Everything in Pro</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Unlimited devices</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Dedicated account manager</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Custom policy rules</li>
+          <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> SLA &amp; onboarding support</li>
+        </ul>
+        <a href="mailto:contact@dlpenterprise.com" class="btn-plan btn-ghost">Contact Sales</a>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Fetch user info and personalise the page
+    fetch('/api/me')
+      .then(r => r.json())
+      .then(data => {
+        if (!data.authenticated) { window.location = '/login'; return; }
+
+        // Nav user
+        if (data.name)    document.getElementById('nav-user-name').textContent = data.name;
+        if (data.picture) {
+          const av = document.getElementById('nav-avatar');
+          av.src = data.picture;
+          av.style.display = 'block';
+        }
+
+        // Trial vs expired banner
+        if (data.status === 'trial' && data.trial_days_left > 0) {
+          const b = document.getElementById('trial-banner');
+          b.style.display = 'block';
+          b.innerHTML = `You have <strong>${data.trial_days_left} day${data.trial_days_left !== 1 ? 's' : ''}</strong> left in your free trial.`;
+        } else if (data.status !== 'active') {
+          document.getElementById('expired-banner').style.display = 'block';
+        }
+
+        // If Stripe not configured, show message on subscribe button
+        if (!data.stripe_pub_key || !data.price_id) {
+          const btn = document.getElementById('btn-subscribe');
+          btn.textContent = 'Stripe not configured';
+          btn.classList.add('btn-loading');
+          btn.title = 'Set STRIPE_PUBLISHABLE_KEY and STRIPE_PRICE_ID in your .env file';
+        }
+      })
+      .catch(() => {});
+
+    function startCheckout() {
+      const btn = document.getElementById('btn-subscribe');
+      btn.textContent = 'Redirecting…';
+      btn.classList.add('btn-loading');
+
+      fetch('/create-checkout-session', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            showError(data.error || 'Failed to start checkout. Please try again.');
+            btn.textContent = 'Subscribe — $29/mo';
+            btn.classList.remove('btn-loading');
+          }
+        })
+        .catch(() => {
+          showError('Network error. Please try again.');
+          btn.textContent = 'Subscribe — $29/mo';
+          btn.classList.remove('btn-loading');
+        });
+    }
+
+    function showError(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 4000);
+    }
+
+    // Show cancelled message
+    if (new URLSearchParams(window.location.search).get('cancelled')) {
+      showError('Payment was cancelled. You can try again whenever you\'re ready.');
+    }
+  </script>
+</body>
+</html>

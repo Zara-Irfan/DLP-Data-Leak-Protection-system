@@ -156,6 +156,49 @@ html, body {
   border: 1px solid rgba(56,139,253,0.2);
 }
 
+/* ── SIDEBAR USER ── */
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  margin: 0 8px 6px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+}
+.sidebar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 2px solid var(--border);
+}
+.sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sidebar-user-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-logout {
+  font-size: 11px;
+  color: var(--txt-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.sidebar-logout:hover { color: var(--red); }
+
 /* ── SIDEBAR FOOTER ── */
 
 .sidebar-footer {

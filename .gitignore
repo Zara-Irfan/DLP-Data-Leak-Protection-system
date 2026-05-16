@@ -8,3 +8,6 @@ __pycache__/
 *.pyo
 .env
 *.enc
+.flask_secret
+server_err.log
+server_test.log
