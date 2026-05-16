@@ -102,11 +102,19 @@ _NOISE_PROCS = frozenset({
     "securityhealthservice.exe", "smartscreen.exe",
     "werfault.exe", "wermgr.exe", "sppsvc.exe",
     # DLP-spawned subprocesses (would flood the log if logged)
-    "wevtutil.exe",     # windows_log_monitor runs this every 2 s
-    "whoami.exe",       # admin detection on startup
-    "netsh.exe",        # firewall_monitor enables logging via netsh
-    "powershell.exe",   # activity_monitor runs this every 1 s for window titles
-    "pwsh.exe",         # same, PowerShell 7 variant
+    "wevtutil.exe",          # windows_log_monitor runs this every 2 s
+    "whoami.exe",            # admin detection on startup
+    "netsh.exe",             # firewall_monitor enables logging via netsh
+    "powershell.exe",        # activity_monitor runs this every 1 s for window titles
+    "pwsh.exe",              # same, PowerShell 7 variant
+    "csc.exe",               # C# compiler spawned by Add-Type in window title polling
+    "vbcscompiler.exe",      # Roslyn compiler, same origin
+    "msedgewebview2.exe",    # Edge WebView runtime used by many apps
+    "python.exe",            # DLP server process itself
+    "python3.exe",           # same, aliased
+    "python3.11.exe",        # version-specific Python launcher
+    "python3.12.exe",        # version-specific Python launcher
+    "pythonw.exe",           # windowless Python variant
 })
 
 # ── Suspicious process detection ─────────────────────────────
