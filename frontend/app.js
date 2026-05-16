@@ -90,6 +90,17 @@ function applyStats(data) {
     if (data[k] !== undefined) stats[k] = data[k];
   });
   renderStats();
+  _updateConfigPanel();
+}
+
+function _updateConfigPanel() {
+  const map = { block:'BLOCK', quarantine:'QUARANTINE', encrypt:'ENCRYPT', alert:'ALERT', allow:'ALLOW' };
+  Object.entries(map).forEach(([key, stat]) => {
+    const el = $('cfg-count-' + key);
+    if (el) el.textContent = (stats[stat] || 0).toLocaleString();
+  });
+  const te = $('cfg-total-events');
+  if (te) te.textContent = (stats.TOTAL || 0).toLocaleString();
 }
 
 function renderStats() {
@@ -438,6 +449,19 @@ function bindNav() {
 // ── Config page ──────────────────────────────────────────────
 
 let _cfg = { watch_paths: [], keywords: [], trusted_ips: [], quarantine_path: '', db: '' };
+let _cfgDirty = false;
+
+function _markDirty() {
+  _cfgDirty = true;
+  const btn = $('cfg-save-btn');
+  if (btn) { btn.classList.add('cfg-dirty'); btn.textContent = 'Save Changes •'; }
+}
+
+function _clearDirty() {
+  _cfgDirty = false;
+  const btn = $('cfg-save-btn');
+  if (btn) { btn.classList.remove('cfg-dirty'); btn.textContent = 'Save Changes'; }
+}
 
 function _renderEditList(id, arr) {
   const el = $(id);
@@ -454,6 +478,7 @@ function _renderEditList(id, arr) {
     btn.addEventListener('click', () => {
       arr.splice(parseInt(btn.dataset.i, 10), 1);
       _renderEditList(id, arr);
+      _markDirty();
     })
   );
 }
@@ -472,6 +497,7 @@ function _renderChips(id, arr, colorClass) {
     btn.addEventListener('click', () => {
       arr.splice(parseInt(btn.dataset.i, 10), 1);
       _renderChips(id, arr, colorClass);
+      _markDirty();
     })
   );
 }
@@ -492,6 +518,14 @@ function loadConfig() {
 
       $('cfg-quarantine-input').value = _cfg.quarantine_path;
       $('cfg-db').textContent         = _cfg.db || '—';
+
+      // Populate status strip
+      const wc = $('cfg-watch-count');
+      if (wc) wc.textContent = _cfg.watch_paths.length;
+      const kc = $('cfg-kw-count');
+      if (kc) kc.textContent = _cfg.keywords.length;
+      _updateConfigPanel();
+      _clearDirty();
     })
     .catch(() => {
       $('cfg-db').textContent = 'Could not load configuration.';
@@ -521,6 +555,7 @@ function saveConfig() {
       if (d.ok) {
         status.textContent = 'Saved successfully';
         status.className   = 'cfg-status cfg-status-ok';
+        _clearDirty();
       } else {
         status.textContent = 'Error: ' + (d.error || 'Unknown');
         status.className   = 'cfg-status cfg-status-err';
@@ -546,6 +581,8 @@ function bindConfigControls() {
       _cfg.watch_paths.push(v);
       _renderEditList('cfg-paths-list', _cfg.watch_paths);
       $('cfg-path-input').value = '';
+      const wc = $('cfg-watch-count'); if (wc) wc.textContent = _cfg.watch_paths.length;
+      _markDirty();
     }
   });
   $('cfg-path-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('cfg-path-add').click(); });
@@ -556,6 +593,8 @@ function bindConfigControls() {
       _cfg.keywords.push(v);
       _renderChips('cfg-kw-list', _cfg.keywords, 'cfg-chip-yellow');
       $('cfg-kw-input').value = '';
+      const kc = $('cfg-kw-count'); if (kc) kc.textContent = _cfg.keywords.length;
+      _markDirty();
     }
   });
   $('cfg-kw-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('cfg-kw-add').click(); });
@@ -566,9 +605,12 @@ function bindConfigControls() {
       _cfg.trusted_ips.push(v);
       _renderChips('cfg-ip-list', _cfg.trusted_ips, 'cfg-chip-blue');
       $('cfg-ip-input').value = '';
+      _markDirty();
     }
   });
   $('cfg-ip-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('cfg-ip-add').click(); });
+
+  $('cfg-quarantine-input').addEventListener('input', _markDirty);
 }
 
 // ── Event detail modal ───────────────────────────────────────

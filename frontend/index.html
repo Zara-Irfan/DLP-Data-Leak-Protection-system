@@ -253,11 +253,51 @@
         <div class="page-header">
           <div>
             <h1 class="page-title">Configuration</h1>
-            <p class="page-subtitle">Edit and save your DLP system settings</p>
+            <p class="page-subtitle">Manage DLP policies, monitored folders, and keywords</p>
           </div>
           <div class="header-right">
             <span id="cfg-status"></span>
             <button id="cfg-save-btn" class="btn-action">Save Changes</button>
+          </div>
+        </div>
+
+        <!-- Status strip -->
+        <div class="cfg-status-strip">
+          <div class="cfg-stat-tile">
+            <div class="cfg-stat-icon cfg-icon-green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="cfg-stat-body">
+              <div class="cfg-stat-val" id="cfg-monitor-status">Active</div>
+              <div class="cfg-stat-lbl">Monitoring</div>
+            </div>
+          </div>
+          <div class="cfg-stat-tile">
+            <div class="cfg-stat-icon cfg-icon-blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            </div>
+            <div class="cfg-stat-body">
+              <div class="cfg-stat-val" id="cfg-total-events">—</div>
+              <div class="cfg-stat-lbl">Total Events</div>
+            </div>
+          </div>
+          <div class="cfg-stat-tile">
+            <div class="cfg-stat-icon cfg-icon-cyan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="cfg-stat-body">
+              <div class="cfg-stat-val" id="cfg-watch-count">—</div>
+              <div class="cfg-stat-lbl">Watched Folders</div>
+            </div>
+          </div>
+          <div class="cfg-stat-tile">
+            <div class="cfg-stat-icon cfg-icon-yellow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <div class="cfg-stat-body">
+              <div class="cfg-stat-val" id="cfg-kw-count">—</div>
+              <div class="cfg-stat-lbl">Keywords</div>
+            </div>
           </div>
         </div>
 
@@ -279,7 +319,7 @@
               <div class="cfg-editlist" id="cfg-paths-list"></div>
               <div class="cfg-addrow">
                 <input class="cfg-textinput" id="cfg-path-input" placeholder="e.g. ./monitor or C:\Users\you\Documents">
-                <button class="cfg-addbtn" id="cfg-path-add">Add Folder</button>
+                <button class="cfg-addbtn" id="cfg-path-add">+ Add Folder</button>
               </div>
             </div>
 
@@ -290,13 +330,13 @@
                 </div>
                 <div>
                   <div class="cfg-block-title">Sensitive Keywords</div>
-                  <div class="cfg-block-sub">Files containing any of these words will be encrypted. Changes apply immediately.</div>
+                  <div class="cfg-block-sub">Files containing any of these words are automatically <span class="inline-badge badge-ENCRYPT">ENCRYPTED</span>. Changes apply immediately without restart.</div>
                 </div>
               </div>
               <div class="cfg-chips" id="cfg-kw-list"></div>
               <div class="cfg-addrow">
-                <input class="cfg-textinput" id="cfg-kw-input" placeholder="e.g. confidential">
-                <button class="cfg-addbtn" id="cfg-kw-add">Add Keyword</button>
+                <input class="cfg-textinput" id="cfg-kw-input" placeholder="e.g. confidential, top-secret">
+                <button class="cfg-addbtn" id="cfg-kw-add">+ Add Keyword</button>
               </div>
             </div>
 
@@ -307,7 +347,7 @@
                 </div>
                 <div>
                   <div class="cfg-block-title">Quarantine Folder</div>
-                  <div class="cfg-block-sub">Files containing financial data are automatically moved here.</div>
+                  <div class="cfg-block-sub">Files with financial data (credit card numbers) are moved here automatically, isolated from their original location.</div>
                 </div>
               </div>
               <input class="cfg-textinput" id="cfg-quarantine-input" placeholder="./quarantine">
@@ -320,19 +360,19 @@
                 </div>
                 <div>
                   <div class="cfg-block-title">Trusted IP Addresses</div>
-                  <div class="cfg-block-sub">Outbound connections to these IPs are not flagged as suspicious.</div>
+                  <div class="cfg-block-sub">Outbound connections to these IPs are not flagged as suspicious network activity.</div>
                 </div>
               </div>
               <div class="cfg-chips cfg-chips-blue" id="cfg-ip-list"></div>
               <div class="cfg-addrow">
                 <input class="cfg-textinput" id="cfg-ip-input" placeholder="e.g. 8.8.8.8">
-                <button class="cfg-addbtn" id="cfg-ip-add">Add IP</button>
+                <button class="cfg-addbtn" id="cfg-ip-add">+ Add IP</button>
               </div>
             </div>
 
           </div>
 
-          <!-- RIGHT: read-only info -->
+          <!-- RIGHT: info panel -->
           <div class="cfg-sidebar">
 
             <div class="card cfg-block">
@@ -354,16 +394,36 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </div>
                 <div>
-                  <div class="cfg-block-title">Policy Rules</div>
-                  <div class="cfg-block-sub">What happens when sensitive content is detected.</div>
+                  <div class="cfg-block-title">Active Policy Rules</div>
+                  <div class="cfg-block-sub">Live counts — updated in real time.</div>
                 </div>
               </div>
               <ul class="cfg-policy">
-                <li><span class="badge badge-BLOCK">BLOCK</span><span>Credentials — password, API key, token</span></li>
-                <li><span class="badge badge-QUARANTINE">QUARANTINE</span><span>Financial data — credit card numbers</span></li>
-                <li><span class="badge badge-ENCRYPT">ENCRYPT</span><span>Proprietary keyword match</span></li>
-                <li><span class="badge badge-ALERT">ALERT</span><span>Personal info — names, SSN</span></li>
-                <li><span class="badge badge-ALLOW">ALLOW</span><span>No sensitive content found</span></li>
+                <li>
+                  <span class="badge badge-BLOCK">BLOCK</span>
+                  <span class="cfg-policy-desc">Credentials</span>
+                  <span class="cfg-policy-count" id="cfg-count-block">0</span>
+                </li>
+                <li>
+                  <span class="badge badge-QUARANTINE">QUARANTINE</span>
+                  <span class="cfg-policy-desc">Financial data</span>
+                  <span class="cfg-policy-count" id="cfg-count-quarantine">0</span>
+                </li>
+                <li>
+                  <span class="badge badge-ENCRYPT">ENCRYPT</span>
+                  <span class="cfg-policy-desc">Proprietary keyword</span>
+                  <span class="cfg-policy-count" id="cfg-count-encrypt">0</span>
+                </li>
+                <li>
+                  <span class="badge badge-ALERT">ALERT</span>
+                  <span class="cfg-policy-desc">Personal info (PII)</span>
+                  <span class="cfg-policy-count" id="cfg-count-alert">0</span>
+                </li>
+                <li>
+                  <span class="badge badge-ALLOW">ALLOW</span>
+                  <span class="cfg-policy-desc">No sensitive content</span>
+                  <span class="cfg-policy-count" id="cfg-count-allow">0</span>
+                </li>
               </ul>
             </div>
 
