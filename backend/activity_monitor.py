@@ -115,6 +115,12 @@ _NOISE_PROCS = frozenset({
     "python3.11.exe",        # version-specific Python launcher
     "python3.12.exe",        # version-specific Python launcher
     "pythonw.exe",           # windowless Python variant
+    "slidetoshutdown.exe",   # Windows shutdown gesture helper
+    "crashpad_handler.exe",  # browser crash reporter
+    "crashhelper.exe",       # browser crash helper
+    "filecoauth.exe",        # OneDrive co-authoring helper
+    "msedge_proxy.exe",      # Edge network proxy helper
+    "identity_helper.exe",   # browser identity/SSO helper
 })
 
 # ── Suspicious process detection ─────────────────────────────
@@ -591,11 +597,13 @@ class ActivityMonitor:
         """Convert a browser window title into a detailed, human-readable DLP event."""
         title = raw_title
 
-        # Strip trailing browser name that the OS appends
+        # Strip trailing browser name that the OS appends (hyphen, en-dash, em-dash variants)
         for suffix in [
-            " - Google Chrome", " - Microsoft Edge", " - Mozilla Firefox",
-            " - Brave", " - Opera", " – Google Chrome", " – Microsoft Edge",
-            " — Google Chrome", " — Microsoft Edge",
+            " - Google Chrome", " – Google Chrome", " — Google Chrome",
+            " - Microsoft Edge", " – Microsoft Edge", " — Microsoft Edge",
+            " - Mozilla Firefox", " – Mozilla Firefox", " — Mozilla Firefox",
+            " - Brave", " – Brave", " — Brave",
+            " - Opera", " – Opera", " — Opera",
         ]:
             if title.endswith(suffix):
                 title = title[:-len(suffix)].strip()
