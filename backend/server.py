@@ -45,6 +45,7 @@ def _broadcaster():
         try:
             event = _event_queue.get(timeout=1)
             socketio.emit("dlp_event", event)
+            socketio.emit("stats_update", _db.stats())  # send AFTER event row is visible
         except Empty:
             continue
 
@@ -135,9 +136,7 @@ if __name__ == "__main__":
     _db = DB()
 
     def _on_event(event):
-        _event_queue.put(event)
-        # push updated stats after every event
-        socketio.emit("stats_update", _db.stats())
+        _event_queue.put(event)  # broadcaster emits dlp_event then stats_update
 
     _engine    = DLPEngine(db=_db, event_callback=_on_event)
     _winlog    = WindowsLogMonitor(db=_db, event_callback=_on_event)

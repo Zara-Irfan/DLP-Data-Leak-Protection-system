@@ -173,7 +173,10 @@ function renderDashboardTable() {
 
   filtered.forEach(ev => tbody.appendChild(buildRow(ev, false)));
 
-  $('row-count').textContent    = `${filtered.length} event${filtered.length !== 1 ? 's' : ''} shown`;
+  const _dbTotal = activeFilter !== 'ALL' ? (stats[activeFilter] || 0) : stats.TOTAL;
+  $('row-count').textContent = _dbTotal > filtered.length
+    ? `${filtered.length.toLocaleString()} of ${_dbTotal.toLocaleString()} shown`
+    : `${filtered.length.toLocaleString()} event${filtered.length !== 1 ? 's' : ''} shown`;
   $('filter-label').textContent = `Filter: ${activeFilter}`;
 }
 
@@ -220,6 +223,12 @@ function loadEventLog() {
       _shownIds.clear();
       rows.forEach(_trackId);
       renderLogTable();
+      // Show "X of Y" if DB has more rows than we fetched
+      const _logTotal = (action && action !== 'ALL') ? (stats[action] || 0) : stats.TOTAL;
+      if (_logTotal > rows.length) {
+        $('log-count').textContent =
+          `${rows.length.toLocaleString()} of ${_logTotal.toLocaleString()} events`;
+      }
       $('log-last-refresh').textContent =
         'Live · ' + new Date().toLocaleTimeString('en-US', { hour12: false });
     })
@@ -264,7 +273,7 @@ function _pollNewEvents() {
       while (tbody.children.length > limitVal) tbody.removeChild(tbody.lastChild);
 
       const shown = tbody.children.length;
-      $('log-count').textContent = `${shown} event${shown !== 1 ? 's' : ''}`;
+      $('log-count').textContent = `${shown.toLocaleString()} event${shown !== 1 ? 's' : ''}`;
       $('log-last-refresh').textContent =
         'Live · ' + new Date().toLocaleTimeString('en-US', { hour12: false });
     })
@@ -285,7 +294,7 @@ function renderLogTable() {
 
   logEvents.forEach(ev => tbody.appendChild(buildRow(ev, false)));
   $('log-count').textContent =
-    `${logEvents.length} event${logEvents.length !== 1 ? 's' : ''}`;
+    `${logEvents.length.toLocaleString()} event${logEvents.length !== 1 ? 's' : ''}`;
 }
 
 function exportCSV() {
@@ -366,8 +375,10 @@ function fetchAndRenderFiltered(action) {
         return;
       }
       rows.forEach(ev => tbody.appendChild(buildRow(ev, false)));
-      $('row-count').textContent =
-        `${rows.length} event${rows.length !== 1 ? 's' : ''} shown`;
+      const _dbTot = stats[action] || 0;
+      $('row-count').textContent = _dbTot > rows.length
+        ? `${rows.length.toLocaleString()} of ${_dbTot.toLocaleString()} shown`
+        : `${rows.length.toLocaleString()} event${rows.length !== 1 ? 's' : ''} shown`;
     })
     .catch(() => renderDashboardTable());
 }
@@ -629,9 +640,8 @@ function connectSocket() {
   socket.on('dlp_event', ev => {
     prependLiveEvent(ev);
     pushTimeline(ev.action);
-    const k = ev.action;
-    if (stats[k] !== undefined) { stats[k]++; stats.TOTAL++; renderStats(); }
     prependLogEvent(ev);
+    // stats_update follows immediately from the broadcaster with accurate DB counts
   });
 
   socket.on('stats_update', data => {
